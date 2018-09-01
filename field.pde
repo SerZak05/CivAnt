@@ -1,11 +1,12 @@
 class Hex {
-  int capacity;
+  int capacity; // over all capacity
+  int space; // current capacity
   final PVector center;
 
   ArrayList<Entity> entities = new ArrayList<Entity>(); // entities, who are on that hex
 
   Hex ( PVector coor, int cap ) {
-    capacity = cap;
+    space = capacity = cap;
     center = new PVector ( coor.x, coor.y );
   }
 }
@@ -26,13 +27,17 @@ class Field {
     PVector coor = new PVector ( 0, height/2 );
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
-        hexes[i][j] = new Hex( coor, 0 );
+        hexes[i][j] = new Hex( coor, 2 );
         coor.y += HEX_SIDE_SIZE/2;
         coor.x += 3*HEX_SIDE_SIZE/2;
       }
       coor.y -= h*HEX_SIDE_SIZE/2 + HEX_SIDE_SIZE/2;
       coor.x -= 3*h*HEX_SIDE_SIZE/2 - 3*HEX_SIDE_SIZE/2;
     }
+    hexes[5][5].space = 0;
+    hexes[5][4].space = 0;
+    hexes[5][3].space = 0;
+    hexes[4][3].space = 0;
 
     // setting the shape
     shape = createShape();
@@ -74,13 +79,13 @@ class Field {
   }
 
   // just transforming regular coor-s into hex coor-s
-  Hex coorsToHex ( float cx, float cy ) {
+  PVector coorsToHex ( float cx, float cy ) {
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
-        if ( isInside( i, j, cx, cy ) ) return hexes[i][j];
+        if ( isInside( i, j, cx, cy ) ) return new PVector ( i, j );
       }
     }
-    return null;
+    return new PVector ( 0, 0 );
   }
 
   // just a list of neighbours of hex[i][j]
@@ -105,7 +110,7 @@ class Field {
     open.add( new Node ( fx, fy, fx, fy ) );
 
     while ( true ) {
-
+      //println( open, close );
       if ( open.isEmpty() ) return null;
       Node current = open.get(0);
       for ( Node n : open ) {
@@ -123,27 +128,36 @@ class Field {
           (int)getNeigh((int)current.x, (int)current.y)[i].x, 
           (int)getNeigh((int)current.x, (int)current.y)[i].y, 
           current.x, current.y
-          );  
-        //println( neighbour.x, neighbour.y, hexs[neighbour.x][neighbour.y].capacity, size);
+          );
+        //println( neighbour.x, neighbour.y, hexes[neighbour.x][neighbour.y].capacity, size);
 
-        if ( 
+        if (
           neighbour.x < 0 || neighbour.x >= w || neighbour.y < 0 || neighbour.y >= h || //out of the map
-          hexes[neighbour.x][neighbour.y].capacity < size || // hex capacity is to small
-          close.contains(neighbour)
-          ) {
+          hexes[neighbour.x][neighbour.y].space < size ) // hex capacity is to small 
+        {
           continue;
         }
+        boolean isBeingContained = false; // neighbour <...> by close
+        for ( Node n : close ) {
+          if ( neighbour.x == n.x && neighbour.y == n.y ) {
+            isBeingContained = true;
+            break;
+          }
+        }
+        if ( isBeingContained ) continue;
+
 
         //println ( "Current node is: " + current.x + ", " + current.y + 
         //  "\nThe neighbour coor-s are : " + neighbour.x + ", " + neighbour.y );
         int G = current.G + 1;
         int H = abs( neighbour.x - tx ) + abs( neighbour.y - ty );
         int F = G + H;
+        //println ( "Neighbours' F = " + F );
         if ( !open.contains(neighbour) || F < neighbour.F ) {
           neighbour.G = G;
           neighbour.H = H;
           neighbour.F = F;
-          if ( !open.contains(neighbour) && !close.contains(neighbour) ) open.add( neighbour );
+          if ( !(open.contains(neighbour) || close.contains(neighbour) ) ) open.add( neighbour );
         }
       }
     }
@@ -162,6 +176,20 @@ class Field {
 
     //println( "Final result: " + result );
     return result;
+  }
+
+  // just drawing a path between hex[a][b] and hex[c][d]
+  void drawPath ( ArrayList<PVector> path ) {
+    if ( path == null ) {
+      return;
+    }
+    PVector ppv = new PVector ( path.get(0).x, path.get(0).y );
+    for ( PVector pv : path ) {
+      PVector currCenter = hexes[(int)pv.x][(int)pv.y].center;
+      PVector prevCenter = hexes[(int)ppv.x][(int)ppv.y].center;
+      line ( prevCenter.x + HEX_SIDE_SIZE, prevCenter.y, currCenter.x + HEX_SIDE_SIZE, currCenter.y );
+      ppv = pv;
+    }
   }
 
   /// drawing the field ///

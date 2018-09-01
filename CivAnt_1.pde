@@ -1,10 +1,10 @@
-final float HEX_SIDE_SIZE = 50; //<>//
+final float HEX_SIDE_SIZE = 50; //<>// //<>//
 Field field;
 
-ArrayList<Entity> entities; 
-Movable insect;
+ArrayList<Entity> entities;
 
-Hex targetHex; // Hex under mouse
+Movable insect;
+Hex targetHex;
 
 void setup() {
   fullScreen();
@@ -14,34 +14,52 @@ void setup() {
   field = new Field ( 10, 10 );
 
   entities = new ArrayList<Entity>();
-  insect = new Movable ( "Insect", 0, 5, 3, 0 );
+  insect = new Movable ( "Insect", 0, 5, 3, 2 );
   entities.add(insect);
+  //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
+  entities.add ( new Nest ( "Nest", 4, 5 ) );
 
   targetHex = new Hex ( new PVector ( 0, 0 ), 0 );
 }
 
-void mouseReleased() {
+void keyPressed () {
+  // next turn
+  if ( key == ' ' ) {
+    for ( int i = 0; i < entities.size(); i++ ) {
+      entities.get(i).nextTurn();
+    }
+  }
+}
+
+void mousePressed() {
   if ( mouseButton == LEFT ) {
     for ( Entity en : entities ) {
       en.isSelected = false;
+      en.updateMenu();
     }
-    if ( !targetHex.entities.isEmpty() ) {
-      targetHex.entities.get(0).isSelected = true;
+    if ( targetHex != null && !targetHex.entities.isEmpty()) {
+      // select an entity by LMB
+      targetHex.entities.get(0).isSelected = targetHex.entities.get(0).canBeSelected;
     }
   }
 }
 
 void draw() {
-  targetHex = field.coorsToHex( mouseX, mouseY );
+  targetHex = field.hexes[(int)field.coorsToHex( mouseX, mouseY ).x][(int)field.coorsToHex( mouseX, mouseY ).y];
+  //println ( field.coorsToHex( mouseX, mouseY ) );  
 
   background(0);
   field.draw();
-  insect.update();
-  insect.draw();
-  if ( targetHex != null ) {
-    //println ( targetHex.center );
-    if ( targetHex.entities.contains(insect) ) {
-      insect.displayInfo();
+  for ( Entity en : entities ) {
+    en.update();
+    if ( targetHex != null ) {
+      //println ( targetHex.center );
+      if ( targetHex.entities.contains(en) ) {
+        en.displayInfo();
+      }
     }
+  }
+  for ( Entity mov : entities ) {
+      mov.draw();
   }
 }
