@@ -1,15 +1,20 @@
 class Entity {
   final boolean canBeSelected;
+  int turnsToDo;
+
+  CustomButton icon;
 
   String name;
   int x, y; // current position on the field
   boolean isSelected = false;
-  Entity ( String name, int x_, int y_ ) {
+  Entity ( String name, int x_, int y_, int ttd ) {
     this.name = name;
     x = x_;
     y = y_;
     field.hexes[x][y].entities.add(this);
     canBeSelected = true;
+
+    turnsToDo = ttd;
   }
   void updateMenu() {
   }
@@ -21,6 +26,7 @@ class Entity {
 
 
   void nextTurn() {
+    isSelected = false;
   }
 
   void displayInfo() {
@@ -39,12 +45,15 @@ class Movable extends Entity {
   int speed, MP, size; //MP (move points) - current state
   boolean isActive = true;
 
-  Movable ( String name, int x, int y, int speed, int size ) {
-    super ( name, x, y );
+  Movable ( String name, int x, int y, int speed, int size, int ttd ) {
+    super ( name, x, y, ttd );
     this.speed = speed;
     MP = speed;
     this.size = size;
 
+    ArrayList<CircButton> buttons = new ArrayList();
+    buttons.add(new CircButton ( "", field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/3 ));
+    icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons ); 
     //addMouseListener( this );
   }
 
@@ -92,6 +101,11 @@ class Movable extends Entity {
     MP -= path.size();
     field.hexes[x][y].entities.remove( this );
     field.hexes[x][y].space += size;
+    PVector diff = PVector.sub(field.hexes[tx][ty].center, field.hexes[x][y].center);
+    for ( Button b : icon.parts ) {
+      b.coor.add( diff );
+    }
+    icon.coor.add( diff );
     x = tx;
     y = ty;
     field.hexes[x][y].entities.add( this );
@@ -99,8 +113,8 @@ class Movable extends Entity {
   }
 
   void nextTurn() {
+    super.nextTurn();
     MP = speed;
-    isSelected = false;
     isActive = true;
   }
 
@@ -149,7 +163,18 @@ class Movable extends Entity {
       }
     }
     noStroke();
+    fill ( 0, 255, 0 );
     ellipse( field.hexes[x][y].center.x + HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
+    if ( icon.isPressed() ) {
+      fill ( 0, 0, 255 );
+    } else {
+      fill ( 255, 0, 0 );
+    }
+    textSize ( 20 );
+    //pushMatrix();
+    //translate( field.hexes[x][y].center.x, field.hexes[x][y].center.y );
+    icon.draw();
+    //popMatrix();
     if ( isSelected ) {
       displayMenu();
     }
@@ -163,15 +188,22 @@ class Nest extends Entity {
   int leftTurns = 0;
   ArrayList<Entity> projects = new ArrayList<Entity>();
   ArrayList<Entity> availableProj = new ArrayList();
-  private ArrayList<Button> menu = new ArrayList();
+  private ArrayList<RectButton> menu = new ArrayList();
 
   Nest ( String name, int x, int y ) {
-    super ( name, x, y );
+    super ( name, x, y, 0 );
     //projects.add(new Movable( "Spawned insect", x, y, 3, 0 ) );
-    availableProj.add( new Movable( "Spawned insect", x, y, 3, 0 ));
+    availableProj.add( new Movable( "Insect 1", x, y, 4, 1, 3 ));
+    availableProj.add( new Movable( "Insect 2", x, y, 3, 1, 2 ));
     for ( int i = 0; i < availableProj.size(); i++ ) {
-      menu.add( new Button ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
+      menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
     }
+
+    ArrayList<Button> buttons = new ArrayList<Button>();
+    buttons.add( new CircButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
+    buttons.add( new RectButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 ) );
+    buttons.add( new CircButton ( "", field.hexes[x][y].center.x+7*HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
+    icon = new CustomButton ( name, field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, buttons );
   }
 
   void displayInfo() {
@@ -190,11 +222,14 @@ class Nest extends Entity {
     if ( availableProj.size() != menu.size() ) { //update buttons
       menu.clear();
       for ( int i = 0; i < availableProj.size(); i++ ) {
-        menu.add( new Button ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
+        menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
       }
     }
     for ( int i = 0; i < menu.size(); i++ ) {
       if ( menu.get(i).isPressed() ) {
+        if ( projects.isEmpty() ) {
+          leftTurns = availableProj.get(i).turnsToDo;
+        }
         projects.add(availableProj.get(i));
       }
     }
@@ -202,13 +237,14 @@ class Nest extends Entity {
 
   void displayMenu() {
     fill ( 255, 100, 0 ); 
+    stroke(0);
     rect ( 3*width/4, 0, width, height ); 
     fill ( 0 ); 
     textSize( (textWidth(name)>width/4 ? 30 : 60) ); 
     text ( name, 3*width/4+10, 10 ); 
     float first_vert_sz = textAscent()+textDescent(); 
     textSize( 40 ); 
-    text ( projects.isEmpty() ? "Select project:" : projects.get(0).name, 3*width/4+10, 10+first_vert_sz ); 
+    text ( projects.isEmpty() ? "Select project:" : "Current project:\n"+projects.get(0).name+"\nTurns left: "+leftTurns, 3*width/4+10, 10+first_vert_sz ); 
 
     if ( projects.isEmpty() ) {
       for ( Button b : menu ) {
@@ -219,8 +255,12 @@ class Nest extends Entity {
   }
 
   void nextTurn() {
+    super.nextTurn();
     if ( leftTurns <= 0 ) {
       spawnProject();
+      if ( !projects.isEmpty() ) {
+        leftTurns = projects.get(0).turnsToDo;
+      }
     } else {
       leftTurns--;
     }
@@ -238,7 +278,14 @@ class Nest extends Entity {
     noStroke(); 
     rectMode( CENTER ); 
     fill ( 255, 100, 255 ); 
-    rect ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 ); 
+    rect ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
+    if ( icon.isPressed() ) {
+      fill ( 255, 0, 0 );
+    } else {
+      fill ( 0, 0, 255 );
+    }
+    textSize(20);
+    icon.draw();
     popStyle(); 
     if ( isSelected ) {
       displayMenu();

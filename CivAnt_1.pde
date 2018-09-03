@@ -14,7 +14,7 @@ void setup() {
   field = new Field ( 10, 10 );
 
   entities = new ArrayList<Entity>();
-  insect = new Movable ( "Insect", 0, 5, 3, 2 );
+  insect = new Movable ( "Insect", 0, 5, 3, 2, 0 );
   entities.add(insect);
   //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
   entities.add ( new Nest ( "Nest", 4, 5 ) );
@@ -33,14 +33,24 @@ void keyPressed () {
 
 void mousePressed() {
   if ( mouseButton == LEFT ) {
+    boolean isIconPressed = false;
     for ( Entity en : entities ) {
       en.isSelected = false;
       en.updateMenu();
+      if ( en.icon == null ) continue;
+      //pushMatrix();
+      //translate ( field.hexes[en.x][en.y].center.x, field.hexes[en.x][en.y].center.y );
+      if ( en.icon.isPressed() ) {
+        en.isSelected = en.canBeSetlected;
+      }
+      //println ( mouseX, mouseY );
+      //popMatrix();
     }
-    if ( targetHex != null && !targetHex.entities.isEmpty()) {
-      // select an entity by LMB
-      targetHex.entities.get(0).isSelected = targetHex.entities.get(0).canBeSelected;
-    }
+
+    //if ( targetHex != null && !targetHex.entities.isEmpty()) {
+    //  // select an entity by LMB
+    //  targetHex.entities.get(0).isSelected = targetHex.entities.get(0).canBeSelected;
+    //}
   }
 }
 
@@ -60,6 +70,6 @@ void draw() {
     }
   }
   for ( Entity mov : entities ) {
-      mov.draw();
+    mov.draw();
   }
 }
