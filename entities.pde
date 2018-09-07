@@ -1,20 +1,25 @@
 class Entity {
   final boolean canBeSelected;
-  int turnsToDo;
+  int turnsToDo, foodToDo;
 
   CustomButton icon;
 
   String name;
   int x, y; // current position on the field
   boolean isSelected = false;
-  Entity ( String name, int x_, int y_, int ttd ) {
+  Entity ( String name, int x_, int y_, boolean cbs, int ttd, int ftd ) {
     this.name = name;
     x = x_;
     y = y_;
     field.hexes[x][y].entities.add(this);
-    canBeSelected = true;
+    canBeSelected = cbs;
 
     turnsToDo = ttd;
+    foodToDo = ftd;
+  }
+  Entity clone() {
+    Entity clone = new Entity ( name, x, y, canBeSelected, turnsToDo, foodToDo );
+    return clone;
   }
   void updateMenu() {
   }
@@ -44,17 +49,31 @@ class Entity {
 class Movable extends Entity {
   int speed, MP, size; //MP (move points) - current state
   boolean isActive = true;
+  color fill;
 
-  Movable ( String name, int x, int y, int speed, int size, int ttd ) {
-    super ( name, x, y, ttd );
+  Movable ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
+    super ( name, x, y, cbs, ttd, ftd );
     this.speed = speed;
     MP = speed;
     this.size = size;
+    field.hexes[x][y].space -= size;
 
     ArrayList<CircButton> buttons = new ArrayList();
     buttons.add(new CircButton ( "", field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/3 ));
     icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons ); 
     //addMouseListener( this );
+    fill = color ( 0, 255, 0 );
+    field.hexes[x][y].isOpened = true;
+    for ( PVector neigh : field.getNeigh( x, y ) ) {
+      if ( neigh.x < 0 || neigh.x > field.w || neigh.y < 0 || neigh.y > field.h ) continue;
+      field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
+    }
+  }
+
+  Movable clone() {
+    Movable clone = new Movable ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
+    clone.MP = MP;
+    return clone;
   }
 
   void displayInfo() {
@@ -108,6 +127,11 @@ class Movable extends Entity {
     icon.coor.add( diff );
     x = tx;
     y = ty;
+    field.hexes[x][y].isOpened = true;
+    for ( PVector neigh : field.getNeigh( x, y ) ) {
+      if ( neigh.x < 0 || neigh.x >= field.w || neigh.y < 0 || neigh.y >= field.h ) continue;
+      field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
+    }
     field.hexes[x][y].entities.add( this );
     field.hexes[x][y].space -= size;
   }
@@ -129,6 +153,11 @@ class Movable extends Entity {
   }
 
   void draw() {
+    if ( isActive ) {
+      fill = color ( 0, 255, 0 );
+    } else {
+      fill = color ( 0, 100, 0 );
+    }
     noStroke();
     if ( isActive ) {
       fill( 255 );
@@ -163,38 +192,115 @@ class Movable extends Entity {
       }
     }
     noStroke();
-    fill ( 0, 255, 0 );
+    fill ( fill );
     ellipse( field.hexes[x][y].center.x + HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
-    if ( icon.isPressed() ) {
+    if ( icon.isPressed() && mouseButton == LEFT ) {
       fill ( 0, 0, 255 );
     } else {
-      fill ( 255, 0, 0 );
+      if ( isActive ) {
+        fill ( 255, 0, 0 );
+      } else {
+        fill ( 100, 0, 0 );
+      }
     }
     textSize ( 20 );
+
     //pushMatrix();
     //translate( field.hexes[x][y].center.x, field.hexes[x][y].center.y );
     icon.draw();
     //popMatrix();
-    if ( isSelected ) {
-      displayMenu();
+  }
+}
+
+class NestBuilder extends Movable {
+  RectButton toBuild = new RectButton ( "Build a nest", 3*width/4, height/4, width/4, height/8 );
+  NestBuilder ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
+    super ( name, x, y, speed, size, cbs, ttd, ftd );
+  }
+
+  NestBuilder clone() {
+    return new NestBuilder ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
+  }
+
+  void updateMenu() {
+    super.updateMenu();
+    if ( toBuild.isPressed() ) {
+      buildNest();
     }
+    //println(this);
+  }
+
+  void displayMenu() {
+    super.displayMenu();
+    fill ( 0, 0, 255 );
+    stroke ( 0 );
+    toBuild.draw();
+  }
+
+  void buildNest () {
+    //nest.isSelected = false;
+    entities.add( new Nest ( "Builded nest", x, y, true ) );
+    entities.remove(this);
   }
 }
 
 
+class GathererBuilder extends Movable {
+  RectButton toBuild = new RectButton ( "Build a gatherer", 3*width/4, height/4, width/4, height/8 );
+  int leftTurns = -1;
+  GathererBuilder ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
+    super ( name, x, y, speed, size, cbs, ttd, ftd );
+  }
 
+  GathererBuilder clone() {
+    return new GathererBuilder ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
+  }
+
+  void nextTurn() {
+    super.nextTurn();
+    if ( leftTurns >= 0 ) {
+      MP = 0;
+      isActive = false;
+      buildGatherer();
+    }
+  }
+
+  void updateMenu() {
+    super.updateMenu();
+    if ( toBuild.isPressed() ) {
+      leftTurns = 5;
+      buildGatherer();
+    }
+    //println(this);
+  }
+
+  void displayMenu() {
+    super.displayMenu();
+    fill ( 0, 0, 255 );
+    stroke ( 0 );
+    toBuild.draw();
+  }
+
+  void buildGatherer () {
+    if ( leftTurns-- <= 0 ) {
+      entities.add( new ResourceGatherer ( x, y ) );
+    }
+  }
+}
 
 class Nest extends Entity {
   int leftTurns = 0;
   ArrayList<Entity> projects = new ArrayList<Entity>();
-  ArrayList<Entity> availableProj = new ArrayList();
-  private ArrayList<RectButton> menu = new ArrayList();
+  ArrayList<Entity> availableProj = new ArrayList<Entity>();
+  private ArrayList<RectButton> menu = new ArrayList<RectButton>();
 
-  Nest ( String name, int x, int y ) {
-    super ( name, x, y, 0 );
+  Nest ( String name, int x, int y, boolean cbs ) {
+    super ( name, x, y, cbs, 0, 0 );
     //projects.add(new Movable( "Spawned insect", x, y, 3, 0 ) );
-    availableProj.add( new Movable( "Insect 1", x, y, 4, 1, 3 ));
-    availableProj.add( new Movable( "Insect 2", x, y, 3, 1, 2 ));
+    availableProj.add( new Movable( "Solder 1", x, y, 4, 1, true, 3, 20 ));
+    availableProj.add( new Movable( "Solder 2", x, y, 3, 1, true, 2, 10 ));
+    availableProj.add( new NestBuilder( "Nest builder", x, y, 2, 2, true, 4, 40 ));
+    availableProj.add( new GathererBuilder ( "Gatherer builder", x, y, 3, 1, true, 3, 30 ));
     for ( int i = 0; i < availableProj.size(); i++ ) {
       menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
     }
@@ -226,14 +332,16 @@ class Nest extends Entity {
       }
     }
     for ( int i = 0; i < menu.size(); i++ ) {
-      if ( menu.get(i).isPressed() ) {
+      if ( menu.get(i).isPressed() && food >= availableProj.get(i).foodToDo ) {
         if ( projects.isEmpty() ) {
           leftTurns = availableProj.get(i).turnsToDo;
         }
-        projects.add(availableProj.get(i));
+        projects.add(availableProj.get(i).clone());
+        food -= availableProj.get(i).foodToDo;
       }
     }
   }
+
 
   void displayMenu() {
     fill ( 255, 100, 0 ); 
@@ -286,9 +394,6 @@ class Nest extends Entity {
     }
     textSize(20);
     icon.draw();
-    popStyle(); 
-    if ( isSelected ) {
-      displayMenu();
-    }
+    popStyle();
   }
 }
