@@ -41,6 +41,10 @@ class RectButton extends Button {
     return mousePressed && mouseX-camPos.x > coor.x && mouseX-camPos.x < coor.x + sizeX && 
       mouseY-camPos.y > coor.y && mouseY-camPos.y < coor.y + sizeY;
   }
+  boolean isPressed( int notMoved ) {
+    return mousePressed && mouseX > coor.x && mouseX < coor.x + sizeX && 
+      mouseY > coor.y && mouseY < coor.y + sizeY;
+  }
 
   void draw() {
     pushStyle();
@@ -62,6 +66,9 @@ class CircButton extends Button {
   }
   boolean isPressed() {
     return mousePressed && dist ( coor.x, coor.y, mouseX-camPos.x, mouseY-camPos.y ) < sizeX/2;
+  }
+  boolean isPressed( int notMoved ) {
+    return mousePressed && dist ( coor.x, coor.y, mouseX, mouseY ) < sizeX/2;
   }
 
   void draw() {

@@ -38,14 +38,15 @@ class Field {
         hexes[i][j] = new Hex( coor, 2 );
         coor.y += HEX_SIDE_SIZE/2;
         coor.x += 3*HEX_SIDE_SIZE/2;
+        hexes[i][j].space = 0;
       }
       coor.y -= h*HEX_SIDE_SIZE/2 + HEX_SIDE_SIZE/2;
       coor.x -= 3*h*HEX_SIDE_SIZE/2 - 3*HEX_SIDE_SIZE/2;
     }
-    hexes[5][5].space = 0;
-    hexes[5][4].space = 0;
-    hexes[5][3].space = 0;
-    hexes[4][3].space = 0;
+    hexes[5][5].capacity = 0;
+    hexes[5][4].capacity = 0;
+    hexes[5][3].capacity = 0;
+    hexes[4][3].capacity = 0;
     hexes[3][3].resource = ResourceType.Flower;
     hexes[2][2].resource = ResourceType.Grass;
     hexes[3][2].resource = ResourceType.Grass;
