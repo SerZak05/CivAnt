@@ -24,6 +24,9 @@ class Field {
   Hex[][] hexes; // array of the hexagons
 
   final PShape shape; // shape of the hexagon
+  final PShape wall; // wall texture
+  PShape[] textures = new PShape[3];
+  //PShape grassShape; // grass texture ( for now )
 
   /// Constructor ///
   Field ( int w_, int h_ ) {
@@ -43,19 +46,32 @@ class Field {
       coor.y -= h*HEX_SIDE_SIZE/2 + HEX_SIDE_SIZE/2;
       coor.x -= 3*h*HEX_SIDE_SIZE/2 - 3*HEX_SIDE_SIZE/2;
     }
-    hexes[5][5].capacity = 0;
-    hexes[5][4].capacity = 0;
-    hexes[5][3].capacity = 0;
-    hexes[4][3].capacity = 0;
-    hexes[3][3].resource = ResourceType.Flower;
-    hexes[2][2].resource = ResourceType.Grass;
-    hexes[3][2].resource = ResourceType.Grass;
+    //hexes[5][5].capacity = 0;
+    //hexes[5][4].capacity = 0;
+    //hexes[5][3].capacity = 0;
+    //hexes[4][3].capacity = 0;
+    //hexes[3][3].resource = ResourceType.Flower;
+    //hexes[2][2].resource = ResourceType.Grass;
+    //hexes[3][2].resource = ResourceType.Grass;
 
     // setting the shape
+    wall = createShape();
+
+    wall.beginShape();
+    wall.fill( 0, 0, 200 );
+    wall.stroke(255);
+    wall.vertex( 0, 0 );
+    wall.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    wall.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    wall.vertex( 2*HEX_SIDE_SIZE, 0 );
+    wall.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    wall.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    wall.endShape(CLOSE);
+
     shape = createShape();
 
     shape.beginShape();
-    shape.fill( 0, 255, 0 );
+    shape.fill( 50 );
     shape.stroke(255);
     shape.vertex( 0, 0 );
     shape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
@@ -64,6 +80,52 @@ class Field {
     shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
     shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
     shape.endShape(CLOSE);
+
+    final PShape sandShape;
+    sandShape = createShape();
+    sandShape.beginShape();
+    sandShape.fill( 200, 200, 0 );
+    sandShape.stroke(255);
+    sandShape.vertex( 0, 0 );
+    sandShape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    sandShape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    sandShape.vertex( 2*HEX_SIDE_SIZE, 0 );
+    sandShape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    sandShape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    sandShape.endShape(CLOSE);
+    textures[0] = sandShape;
+
+    final PShape grassShape;
+    grassShape = createShape();
+    grassShape.beginShape();
+    grassShape.fill( 10, 200, 10 );
+    grassShape.stroke(255);
+    grassShape.vertex( 0, 0 );
+    grassShape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    grassShape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    grassShape.vertex( 2*HEX_SIDE_SIZE, 0 );
+    grassShape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    grassShape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    grassShape.endShape(CLOSE);
+    textures[1] = grassShape;
+
+    textures[2] = grassShape;
+  }
+
+  void updateSpace() {
+    for ( int i = 0; i < w; i++ ) {
+      for ( int j = 0; j < h; j++ ) {
+        Hex hex = hexes[i][j]; 
+        if ( !hex.isOpened ) {
+          hex.space = 0;
+          continue;
+        }
+        hex.space = hex.capacity;
+        for ( Entity en : hex.entities ) {
+          hex.space -= en.size;
+        }
+      }
+    }
   }
 
   /// checking if the coor-s are inside hex[i][j] ///
@@ -91,24 +153,24 @@ class Field {
   }
 
   // just transforming regular coor-s into hex coor-s
-  PVector coorsToHex ( float cx, float cy ) {
+  HexCoor coorsToHex ( float cx, float cy ) {
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
-        if ( isInside( i, j, cx, cy ) ) return new PVector ( i, j );
+        if ( isInside( i, j, cx, cy ) ) return new HexCoor ( i, j );
       }
     }
-    return new PVector ( 0, 0 );
+    return new HexCoor ( 0, 0 );
   }
 
   // just a list of neighbours of hex[i][j]
-  PVector[] getNeigh ( int i, int j ) {
-    PVector[] result = new PVector[6];
-    result[0] = new PVector ( i-1, j+1 );
-    result[1] = new PVector ( i, j+1 );
-    result[2] = new PVector ( i+1, j );
-    result[3] = new PVector ( i+1, j-1 );
-    result[4] = new PVector ( i, j-1 );
-    result[5] = new PVector ( i-1, j );
+  HexCoor[] getNeigh ( int i, int j ) {
+    HexCoor[] result = new HexCoor[6];
+    result[0] = new HexCoor ( i-1, j+1 );
+    result[1] = new HexCoor ( i, j+1 );
+    result[2] = new HexCoor ( i+1, j );
+    result[3] = new HexCoor ( i+1, j-1 );
+    result[4] = new HexCoor ( i, j-1 );
+    result[5] = new HexCoor ( i-1, j );
     return result;
   }
 
@@ -116,7 +178,10 @@ class Field {
 
   // new A* version yummy!!! //
 
-  ArrayList<PVector> path ( int fx, int fy, int tx, int ty, int size ) {
+  ArrayList<HexCoor> path ( int fx, int fy, int tx, int ty, int size ) {
+    // quick exit with error  
+    if ( tx < 0 || tx > w || ty < 0 || ty > h ) return null;
+    if ( field.hexes[tx][ty].space < size ) return null;
     ArrayList<Node> close = new ArrayList<Node>();
     ArrayList<Node> open = new ArrayList<Node>();
     open.add( new Node ( fx, fy, fx, fy ) );
@@ -137,8 +202,8 @@ class Field {
 
       for ( int i = 0; i < 6; i++ ) {
         Node neighbour = new Node ( 
-          (int)getNeigh((int)current.x, (int)current.y)[i].x, 
-          (int)getNeigh((int)current.x, (int)current.y)[i].y, 
+          getNeigh(current.x, current.y)[i].x, 
+          getNeigh(current.x, current.y)[i].y, 
           current.x, current.y
           );
 
@@ -174,13 +239,13 @@ class Field {
         }
       }
     }
-    ArrayList<PVector> result = new ArrayList<PVector>();
+    ArrayList<HexCoor> result = new ArrayList<HexCoor>();
     Node node = new Node ( 0, 0, 0, 0 );
     for ( Node n : close ) {
       if ( n.x == tx && n.y == ty ) node = n;
     }
     while ( node.x != fx || node.y != fy ) {
-      result.add( new PVector ( node.x, node.y ) );
+      result.add( new HexCoor ( node.x, node.y ) );
       for ( Node n : close ) {
         if ( n.x == node.px && n.y == node.py ) node = n;
       }
@@ -192,14 +257,14 @@ class Field {
   }
 
   // just drawing a path between hex[a][b] and hex[c][d]
-  void drawPath ( ArrayList<PVector> path ) {
+  void drawPath ( ArrayList<HexCoor> path ) {
     if ( path == null ) {
       return;
     }
-    PVector ppv = new PVector ( path.get(0).x, path.get(0).y );
-    for ( PVector pv : path ) {
-      PVector currCenter = hexes[(int)pv.x][(int)pv.y].center;
-      PVector prevCenter = hexes[(int)ppv.x][(int)ppv.y].center;
+    HexCoor ppv = new HexCoor ( path.get(0).x, path.get(0).y );
+    for ( HexCoor pv : path ) {
+      PVector currCenter = hexes[pv.x][pv.y].center;
+      PVector prevCenter = hexes[ppv.x][ppv.y].center;
       line ( prevCenter.x + HEX_SIDE_SIZE, prevCenter.y, currCenter.x + HEX_SIDE_SIZE, currCenter.y );
       ppv = pv;
     }
@@ -215,30 +280,31 @@ class Field {
           shape( shape, hexes[i][j].center.x, hexes[i][j].center.y );
           continue;
         }
-        if ( hexes[i][j].space == 0 ) {
-          //println ( i, j );
-          shape.setFill(true);
-          shape.setFill( 0 );
-        } else {
-          shape.setFill(true);
-          shape.setFill( 50 );
-        }
-        shape( shape, hexes[i][j].center.x, hexes[i][j].center.y );
+        shape.setFill(true);
+        shape.setFill( 50 );
+
+
+        shape( textures[hexes[i][j].resource.ordinal()], hexes[i][j].center.x, hexes[i][j].center.y );
+
+        // draw resource
         switch ( hexes[i][j].resource ) {
-        case Grass:
-          for ( int k = 0; k < 200; k++ ) {
-            PVector coor = new PVector ( 0, 0 );
-            while ( !isInside(i, j, coor.x, coor.y) ) {
-              coor = new PVector ( random ( hexes[i][j].center.x, hexes[i][j].center.x+HEX_SIDE_SIZE*2 ), 
-                random ( hexes[i][j].center.y - HEX_SIDE_SIZE/2, hexes[i][j].center.y + HEX_SIDE_SIZE/2 ) );
-            }
-            //println ( coor );
-            stroke ( random(50), 255, 50 );
-            line ( coor.x, coor.y, coor.x, coor.y-10 );
-          }
-          break;
+          //case None:
+          //  shape( shape, hexes[i][j].center.x, hexes[i][j].center.y );
+          //  break;
+          //case Grass:
+          //  //for ( int k = 0; k < 200; k++ ) {
+          //  //  PVector coor = new PVector ( 0, 0 );
+          //  //  while ( !isInside(i, j, coor.x, coor.y) ) {
+          //  //    coor = new PVector ( random ( hexes[i][j].center.x, hexes[i][j].center.x+HEX_SIDE_SIZE*2 ), 
+          //  //      random ( hexes[i][j].center.y - HEX_SIDE_SIZE/2, hexes[i][j].center.y + HEX_SIDE_SIZE/2 ) );
+          //  //  }
+          //  //  //println ( coor );
+          //  //  stroke ( random(50), 255, 50 );
+          //  //  line ( coor.x, coor.y, coor.x, coor.y-10 );
+          //  shape( grassShape, hexes[i][j].center.x, hexes[i][j].center.y );
+          //  break;
         case Flower:
-          shape.setFill(false);
+          //shape.setFill(false);
           pushMatrix();
           translate ( hexes[i][j].center.x + HEX_SIDE_SIZE, hexes[i][j].center.y );
           noStroke();
@@ -251,6 +317,10 @@ class Field {
           ellipse ( 0, 0, HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
           popMatrix();
           break;
+        }
+        if ( hexes[i][j].space == 0 ) {
+          //println ( i, j );
+          shape ( wall, hexes[i][j].center.x, hexes[i][j].center.y );
         }
       }
     }
@@ -266,7 +336,7 @@ enum ResourceType {
 class ResourceGatherer extends Entity {
   int nx = -1, ny = -1; // nearest nest`s coor
   ResourceGatherer ( int x, int y ) {
-    super ( "", x, y, false, 0, 0 );
+    super ( new EntityBuilder( "", x, y ) );
     this.x = x;
     this.y = y;
   }
@@ -292,7 +362,9 @@ class ResourceGatherer extends Entity {
   }
 
   void nextTurn() {
-    food += field.hexes[x][y].resource.ordinal();
+    //food += field.hexes[x][y].resource.ordinal();
+    foodUsing = -field.hexes[x][y].resource.ordinal();
+    super.nextTurn();
   }
   void draw() {
     stroke ( 0, 150, 0 );

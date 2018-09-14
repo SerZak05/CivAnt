@@ -1,3 +1,14 @@
+class HexCoor {
+  int x, y;
+  HexCoor ( int x, int y ) {
+    this.x = x;
+    this.y = y;
+  }
+  int dist ( HexCoor hex ) {
+    return abs(x-hex.x) + abs(y-hex.y);
+  }
+}
+
 // used in A* alg. //
 class Node {
   int x, y, px, py;

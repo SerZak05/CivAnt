@@ -1,24 +1,73 @@
+///Builder///
+class EntityBuilder {
+  String name;
+  HexCoor coor;
+  //////
+  boolean canBeSelected = true;
+  int turnsToDo = 0;
+  int foodToDo = 0;
+  int foodUsing = 0;
+  int player = 0; // 0 - our player
+  EntityBuilder ( String name, int x, int y ) {
+    this.name = name;
+    coor = new HexCoor( x, y );
+  }
+  EntityBuilder setCbs ( boolean cbs ) {
+    canBeSelected = cbs;
+    return this;
+  }
+  EntityBuilder setTtd ( int ttd ) {
+    turnsToDo = ttd;
+    return this;
+  }
+  EntityBuilder setFtd ( int ftd ) {
+    foodToDo = ftd;
+    return this;
+  }
+  EntityBuilder setFus ( int fus ) {
+    foodUsing = fus;
+    return this;
+  }
+  EntityBuilder setPlayer ( int pl ) {
+    player = pl;
+    return this;
+  }
+  Entity build() {
+    return new Entity ( this );
+  }
+}
+
+
 class Entity {
-  final boolean canBeSelected;
-  int turnsToDo, foodToDo;
+  boolean canBeSelected;
+  int turnsToDo, foodToDo, foodUsing;
+  int size = 0;
+  int player = 0; // player number
 
   CustomButton icon;
 
   String name;
   int x, y; // current position on the field
   boolean isSelected = false;
-  Entity ( String name, int x_, int y_, boolean cbs, int ttd, int ftd ) {
-    this.name = name;
-    x = x_;
-    y = y_;
+  Entity ( EntityBuilder builder ) {
+    name = builder.name;
+    x = builder.coor.x;
+    y = builder.coor.y;
     field.hexes[x][y].entities.add(this);
-    canBeSelected = cbs;
+    canBeSelected = builder.canBeSelected;
 
-    turnsToDo = ttd;
-    foodToDo = ftd;
+    turnsToDo = builder.turnsToDo;
+    foodToDo = builder.foodToDo;
+    foodUsing = builder.foodUsing;
   }
+
   Entity clone() {
-    Entity clone = new Entity ( name, x, y, canBeSelected, turnsToDo, foodToDo );
+    Entity clone = new EntityBuilder( name, x, y )
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing)
+      .build();
     return clone;
   }
   void updateMenu() {
@@ -28,6 +77,7 @@ class Entity {
 
   void nextTurn() {
     isSelected = false;
+    food -= foodUsing;
   }
 
   void displayInfo() {
@@ -41,37 +91,67 @@ class Entity {
 
 
 
+///
+///MOVABLES///
+///
+///Builder///
+class MovableBuilder extends EntityBuilder {
+  int speed, MP, size; 
+  MovableBuilder ( String name, int x, int y ) {
+    super ( name, x, y );
+  }
+  MovableBuilder setSpeed ( int speed ) {
+    this.speed = speed;
+    return this;
+  }
+  MovableBuilder setSize ( int size ) {
+    this.size = size;
+    return this;
+  }
+  MovableBuilder setMP ( int mp ) {
+    MP = mp;
+    return this;
+  }
+  Entity build() {
+    return new Movable(this);
+  }
+}
 
 class Movable extends Entity {
   int speed, MP, size; //MP (move points) - current state
   boolean isActive = true;
   color fill;
 
-  Movable ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
-    super ( name, x, y, cbs, ttd, ftd );
-    this.speed = speed;
-    MP = speed;
-    this.size = size;
+  Movable ( MovableBuilder builder ) {
+    super ( builder );
+    speed = builder.speed;
+    MP = builder.MP;
+    size = builder.size;
 
     ArrayList<CircButton> buttons = new ArrayList();
     buttons.add(new CircButton ( "", field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/3 ));
     icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons ); 
     //addMouseListener( this );
-    fill = color ( 0, 255, 0 );
+    fill = color ( 255, 255, 0 );
 
-    field.hexes[x][y].isOpened = true;
     //println ( field.hexes[x][y].capacity - size );
+    field.updateSpace();
     field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-    for ( PVector neigh : field.getNeigh( x, y ) ) {
-      if ( neigh.x < 0 || neigh.x > field.w || neigh.y < 0 || neigh.y > field.h ) continue;
-      field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
-      field.hexes[(int)neigh.x][(int)neigh.y].space = field.hexes[(int)neigh.x][(int)neigh.y].capacity;
-    }
+    updateVisibility();
   }
 
+
   Movable clone() {
-    Movable clone = new Movable ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
-    clone.MP = MP;
+    Movable clone = (Movable)new MovableBuilder( name, x, y )
+      .setSpeed(speed)
+      .setSize(size)
+      .setMP(MP)
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing)
+      .build();
+    //clone.MP = MP;
     return clone;
   }
 
@@ -92,9 +172,11 @@ class Movable extends Entity {
   void updateMenu() {
     if ( pmousePressed && !mousePressed && canBeSelected ) { // mouse released
       if ( mouseButton == RIGHT ) {
-        PVector target = field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y );
+        HexCoor target = field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y );
         if ( target != null ) {
-          move ( (int)target.x, (int)target.y );
+          field.hexes[x][y].space += size;
+          move ( target.x, target.y );
+          field.hexes[x][y].space = field.hexes[x][y].capacity - size;
         }
       }
     }
@@ -113,12 +195,12 @@ class Movable extends Entity {
   }
 
   void move( int tx, int ty ) {
-    ArrayList<PVector> path = field.path( x, y, tx, ty, size );
+    ArrayList<HexCoor> path = field.path( x, y, tx, ty, size );
     if ( path == null ) return;
     if ( path.size() > MP ) return;
     MP -= path.size();
     field.hexes[x][y].entities.remove( this );
-    field.hexes[x][y].space += size;
+    //field.hexes[x][y].space += size;
     PVector diff = PVector.sub(field.hexes[tx][ty].center, field.hexes[x][y].center);
     for ( Button b : icon.parts ) {
       b.coor.add( diff );
@@ -126,15 +208,45 @@ class Movable extends Entity {
     icon.coor.add( diff );
     x = tx;
     y = ty;
+    updateVisibility();
+    //field.hexes[x][y].space = field.hexes[x][y].capacity - size;
+    for ( int i = 0; i < field.hexes[x][y].entities.size(); i++ ) {
+      Entity en = field.hexes[x][y].entities.get(i);
+      if ( en instanceof Squad ) {
+        if ( !((Squad)en).insects.contains(this) ) {
+          joinSquad ( (Squad)en );
+        }
+        return;
+      } 
+      if ( en instanceof Movable ) {
+        Squad sq = new Squad ( "Squad", x, y, true, new ArrayList<Movable>());
+        sq.isActive = false;
+        sq.MP = 0;
+        entities.add ( sq );
+        ((Movable) en).joinSquad( sq );
+        joinSquad( sq );
+      }
+    }
+    field.hexes[x][y].entities.add( this );
+    //field.hexes[x][y].space -= size;
+  }
+
+  void joinSquad( Squad s ) {
+    MP = 0;
+    isActive = false;
+    field.hexes[x][y].entities.remove(this);
+    s.insects.add ( this );
+    s.updateButtons();
+    entities.remove ( this );
+  }
+
+  void updateVisibility() {
     field.hexes[x][y].isOpened = true;
-    field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-    for ( PVector neigh : field.getNeigh( x, y ) ) {
+    for ( HexCoor neigh : field.getNeigh( x, y ) ) {
       if ( neigh.x < 0 || neigh.x >= field.w || neigh.y < 0 || neigh.y >= field.h ) continue;
       field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
       field.hexes[(int)neigh.x][(int)neigh.y].space = field.hexes[(int)neigh.x][(int)neigh.y].capacity;
     }
-    field.hexes[x][y].entities.add( this );
-    //field.hexes[x][y].space -= size;
   }
 
   void nextTurn() {
@@ -155,9 +267,9 @@ class Movable extends Entity {
 
   void draw() {
     if ( isActive ) {
-      fill = color ( 0, 255, 0 );
+      fill = color ( 255, 255, 0 );
     } else {
-      fill = color ( 0, 100, 0 );
+      fill = color ( 100, 100, 0 );
     }
     noStroke();
     if ( isActive ) {
@@ -169,14 +281,14 @@ class Movable extends Entity {
       fill ( 255, 255, 0 );
       if ( mousePressed && mouseButton == RIGHT && canBeSelected ) {
         stroke(255);
-        ArrayList<PVector> path = field.path( x, y, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).x, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).y, size );
+        ArrayList<HexCoor> path = field.path( x, y, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).x, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).y, size );
         if ( path != null ) {
-          path.add(0, new PVector ( x, y ));
+          path.add(0, new HexCoor ( x, y ));
           if ( path.size() <= MP+1 ) {
             field.drawPath ( path );
           } else {
-            ArrayList<PVector> firstPath = new ArrayList();
-            ArrayList<PVector> secondPath = new ArrayList();
+            ArrayList<HexCoor> firstPath = new ArrayList();
+            ArrayList<HexCoor> secondPath = new ArrayList();
             for ( int i = 0; i < path.size(); i++ ) {
               if ( i <= MP ) {
                 firstPath.add(path.get(i));
@@ -213,20 +325,35 @@ class Movable extends Entity {
   }
 }
 
-class NestBuilder extends Movable {
-  RectButton toBuild = new RectButton ( "Build a nest", 3*width/4, height/4, width/4, height/8 );
-  NestBuilder ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
-    super ( name, x, y, speed, size, cbs, ttd, ftd );
+
+
+/// Workers ///
+class Worker extends Movable {
+  RectButton toBuild = new RectButton ( "Build", 3*width/4, height/4, width/4, height/8 );
+  Worker ( MovableBuilder builder ) {
+    super ( builder );
   }
 
-  NestBuilder clone() {
-    return new NestBuilder ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
+  /////Builder is MovableBuilder///
+  //class WorkerBuilder extends MovableBuilder {
+  //  WorkerBuilder ( String name, int x, int y ) {
+  //    super ( name, x, y );
+  //  }
+
+  //}
+
+  Worker clone() {
+    return (Worker)new MovableBuilder ( name, x, y ).setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing)
+      .build();
   }
 
   void updateMenu() {
     super.updateMenu();
     if ( toBuild.isPressed(0) ) {
-      buildNest();
+      build();
     }
     //println(this);
   }
@@ -238,24 +365,59 @@ class NestBuilder extends Movable {
     toBuild.draw();
   }
 
-  void buildNest () {
+  void build () {
     //nest.isSelected = false;
-    entities.add( new Nest ( "Builded nest", x, y, true ) );
+    //entities.add( new Nest ( "Builded nest", x, y, true ) );
+    //entities.remove(this);
+  }
+}
+
+class NestBuilder extends Worker {
+  //RectButton toBuild = new RectButton ( "Build a nest", 3*width/4, height/4, width/4, height/8 );
+  NestBuilder ( MovableBuilder builder ) {
+    super ( builder );
+    toBuild.name = "Build a nest";
+  }
+
+  NestBuilder clone() {
+    return new NestBuilder( (MovableBuilder)new MovableBuilder ( name, x, y )
+      .setSpeed(speed)
+      .setSize(size)
+      .setMP(MP)
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing));
+  }
+
+  void build () {
+    //nest.isSelected = false;
+    entities.add( new Nest( new EntityBuilder( "Builded nest", x, y )
+      .setCbs(canBeSelected)
+      .setFus(3)));
     entities.remove(this);
   }
 }
 
 
 
-class GathererBuilder extends Movable {
-  RectButton toBuild = new RectButton ( "Build a gatherer", 3*width/4, height/4, width/4, height/8 );
+class GathererBuilder extends Worker {
+  //RectButton toBuild = new RectButton ( "Build a gatherer", 3*width/4, height/4, width/4, height/8 );
   int leftTurns = -1;
-  GathererBuilder ( String name, int x, int y, int speed, int size, boolean cbs, int ttd, int ftd ) {
-    super ( name, x, y, speed, size, cbs, ttd, ftd );
+  GathererBuilder ( MovableBuilder builder ) {
+    super ( builder );
+    toBuild.name = "Build a gatherer";
   }
 
   GathererBuilder clone() {
-    return new GathererBuilder ( name, x, y, speed, size, canBeSelected, turnsToDo, foodToDo );
+    return new GathererBuilder( (MovableBuilder)new MovableBuilder ( name, x, y )
+      .setSpeed(speed)
+      .setSize(size)
+      .setMP(MP)
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing));
   }
 
   void nextTurn() {
@@ -263,27 +425,21 @@ class GathererBuilder extends Movable {
     if ( leftTurns >= 0 ) {
       MP = 0;
       isActive = false;
-      buildGatherer();
+      build();
     }
   }
 
   void updateMenu() {
-    super.updateMenu();
     if ( toBuild.isPressed(0) && leftTurns <= 0 ) {
       leftTurns = 5;
       isActive = false;
       isSelected = false;
-      buildGatherer();
+      build();
     }
+    super.updateMenu();
     //println(this);
   }
 
-  void displayMenu() {
-    super.displayMenu();
-    fill ( 0, 0, 255 );
-    stroke ( 0 );
-    toBuild.draw();
-  }
   void displayInfo() {
     super.displayInfo();
     if ( leftTurns >= 0 ) {
@@ -291,153 +447,180 @@ class GathererBuilder extends Movable {
     }
   }
 
-  void buildGatherer () {
+  void build () {
     if ( leftTurns-- <= 0 ) {
       entities.add( new ResourceGatherer ( x, y ) );
     }
   }
 }
 
-class Nest extends Entity {
-  int leftTurns = 0;
-  ArrayList<Entity> projects = new ArrayList<Entity>();
-  ArrayList<Entity> availableProj = new ArrayList<Entity>();
-  private ArrayList<RectButton> menu = new ArrayList<RectButton>();
+/// Solders ///
+///Builder///
+class SolderBuilder extends MovableBuilder {
+  int attack, lives, totalLives;
+  SolderBuilder( String name, int x, int y ) {
+    super( name, x, y );
+  }
+  SolderBuilder setAttack( int att ) {
+    attack = att;
+    return this;
+  }
+  SolderBuilder setTotalLives( int totliv ) {
+    totalLives = totliv;
+    return this;
+  }
+  SolderBuilder setLives( int liv ) {
+    lives = liv;
+    return this;
+  }
+}
 
-  Nest ( String name, int x, int y, boolean cbs ) {
-    super ( name, x, y, cbs, 0, 0 );
-    //projects.add(new Movable( "Spawned insect", x, y, 3, 0 ) );
-    availableProj.add( new Movable( "Solder 1", x, y, 4, 1, true, 3, 20 ));
-    availableProj.add( new Movable( "Solder 2", x, y, 3, 1, true, 2, 10 ));
-    availableProj.add( new NestBuilder( "Nest builder", x, y, 2, 2, true, 4, 40 ));
-    availableProj.add( new GathererBuilder ( "Gatherer builder", x, y, 3, 1, true, 3, 30 ));
-    for ( int i = 0; i < availableProj.size(); i++ ) {
-      menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
-    }
-
-    ArrayList<Button> buttons = new ArrayList<Button>();
-    buttons.add( new CircButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
-    buttons.add( new RectButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 ) );
-    buttons.add( new CircButton ( "", field.hexes[x][y].center.x+7*HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
-    icon = new CustomButton ( name, field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, buttons );
+class Solder extends Movable {
+  int attack;
+  int lives, totalLives;
+  Solder ( SolderBuilder builder ) {
+    super( builder );
+    attack = builder.attack;
+    totalLives = builder.totalLives;
+    lives = builder.lives;
   }
 
-  void update() {
-    if ( isSelected ) {
-      updateMenu();
+
+  Solder clone() {
+    return (Solder)new SolderBuilder( name, x, y )
+      .setAttack(attack)
+      .setLives(totalLives)
+      .setTotalLives(totalLives)
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing)
+      .build();
+  }
+  void attack( Movable en ) {
+  }
+}
+
+class RangedSolder extends Solder {
+  int range;
+  RangedSolder ( RangedSolderBuilder builder ) {
+    super ( builder );
+    range = builder.range;
+  }
+
+  ///Builder///
+  class RangedSolderBuilder extends SolderBuilder {
+    int range;
+    RangedSolderBuilder( String name, int x, int y ) {
+      super( name, x, y );
+    }
+    RangedSolderBuilder setRange( int r ) {
+      range = r;
+      return this;
+    }
+  }
+  RangedSolder clone() {
+    return (RangedSolder)new RangedSolderBuilder( name, x, y )
+      .setRange(range)
+      .setAttack(attack)
+      .setLives(totalLives)
+      .setTotalLives(totalLives)
+      .setCbs(canBeSelected)
+      .setFtd(foodToDo)
+      .setTtd(turnsToDo)
+      .setFus(foodUsing)
+      .build();
+  }
+  void attack ( Movable en ) {
+    if ( new HexCoor( x, y ).dist( new HexCoor( en.x, en.y ) ) <= range ) {
+    }
+  }
+}
+
+//Squad of movables
+class Squad extends Movable {
+  ArrayList<Movable> insects;
+  ArrayList<RectButton> menu;
+  Squad ( String name, int x, int y, boolean cbs, ArrayList<Movable> ins ) {
+    super ( (MovableBuilder)new MovableBuilder( name, x, y )
+      .setCbs(cbs));
+    insects = ins;
+    for ( Movable i : insects ) {
+      if ( i.speed < speed ) {
+        speed = i.speed;
+      }
+      size+=i.size;
+      foodUsing+=i.foodUsing;
+    }
+    menu = new ArrayList<RectButton>();
+    updateButtons();
+  }
+
+  void removeInsect ( Movable ins ) {
+    entities.add( ins );
+    ins.canBeSelected = true;
+    ins.isSelected = true;
+    field.hexes[x][y].entities.add ( ins );
+    isSelected = false;
+    insects.remove(ins);
+    if ( insects.size() == 1 ) {
+      Movable ins2 = insects.get(0);
+      removeInsect(ins2);
+      ins2.isSelected = false;
+      field.hexes[x][y].entities.remove(this);
+      entities.remove ( this );
+    } else if ( insects.isEmpty() ) {
+      field.hexes[x][y].entities.remove(this);
+      entities.remove ( this );
+    }
+    updateButtons();
+  }
+
+  void removeInsect ( int i ) {
+    removeInsect ( insects.get(i) );
+  }
+
+  void move( int tx, int ty ) {
+    super.move( tx, ty );
+    for ( int i = 0; i < insects.size(); i++ ) {
+      insects.get(i).move ( tx, ty );
     }
   }
 
   void displayInfo() {
-    fill ( 100, 255, 50 );
-    rect ( 0, height, width/4, 3*height/4 );
-    fill ( 0 );
-    textSize( (textWidth(name)>width/4 ? 30 : 60) );
-    text ( name, 10, 3*height/4 + 10 );
-    float first_vert_sz = textAscent()+textDescent();
-    textSize ( 20 );
-    text ( "Current project: " + ( projects.isEmpty() ? "NO PROJECT" : projects.get(0).name ), 10, 3*height/4 + first_vert_sz );
-    float sec_vert_sz = textAscent()+textDescent();
+    super.displayInfo();
+    text ( "Number of units: " + insects.size(), 10, height-10 );
+  }
+
+  void updateButtons() {
+    if ( menu.size() == insects.size() ) return;
+    menu.clear();
+    for ( int i = 0; i < insects.size(); i++ ) {
+      menu.add( new RectButton ( insects.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
+    }
   }
 
   void updateMenu() {
-    if ( availableProj.size() != menu.size() ) { //update buttons
-      menu.clear();
-      for ( int i = 0; i < availableProj.size(); i++ ) {
-        menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
-      }
-    }
-    for ( int i = 0; i < menu.size(); i++ ) {
-      if ( menu.get(i).isPressed(0) && food >= availableProj.get(i).foodToDo ) {
-        if ( projects.isEmpty() ) {
-          leftTurns = availableProj.get(i).turnsToDo;
-        }
-        projects.add(availableProj.get(i).clone());
-        food -= availableProj.get(i).foodToDo;
+    super.updateMenu();
+    for ( RectButton b : menu ) {
+      if ( b.isPressed() ) {
+        removeInsect ( menu.indexOf(b) );
+        break;
       }
     }
   }
 
-
   void displayMenu() {
-    fill ( 255, 100, 0 ); 
-    stroke(0);
-    rect ( 3*width/4, 0, width, height ); 
-    fill ( 0 ); 
-    textSize( (textWidth(name)>width/4 ? 30 : 60) ); 
-    text ( name, 3*width/4+10, 10 ); 
-    float first_vert_sz = textAscent()+textDescent(); 
-    textSize( 40 ); 
-    text ( projects.isEmpty() ? "Select project:" : "Current project:\n"+projects.get(0).name+"\nTurns left: "+leftTurns, 3*width/4+10, 10+first_vert_sz ); 
-
-    if ( projects.isEmpty() ) {
-      for ( Button b : menu ) {
-        fill ( 50, 100, 255 ); 
-        b.draw();
-      }
+    super.displayMenu();
+    for ( RectButton b : menu ) {
+      b.draw();
     }
   }
 
   void nextTurn() {
     super.nextTurn();
-    if ( leftTurns <= 0 ) {
-      spawnProject();
-      if ( !projects.isEmpty() ) {
-        leftTurns = projects.get(0).turnsToDo;
-      }
-    } else {
-      leftTurns--;
+    for ( Movable en : insects ) {
+      en.nextTurn();
     }
-  }
-
-  void spawnProject() {
-    if ( !projects.isEmpty() ) {
-      entities.add( projects.get(0) ); 
-      projects.remove(0);
-    }
-  }
-
-  void draw () {
-    pushStyle(); 
-    noStroke(); 
-    rectMode( CENTER ); 
-    fill ( 255, 100, 255 ); 
-    rect ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
-    if ( icon.isPressed() ) {
-      fill ( 255, 0, 0 );
-    } else {
-      fill ( 0, 0, 255 );
-    }
-    textSize(20);
-    icon.draw();
-    popStyle();
   }
 }
-
-// Squad of movables
-//class Squad extends Movable {
-//  ArrayList<Movable> insects;
-//  ArrayList<RectButton> menu;
-//  Squad ( String name, int x, int y, boolean cbs, ArrayList ins ) {
-//    insects = ins;
-//    menu = new ArrayList<RectButton>();
-//    int minspeed = 1000;
-//    int size = 0;
-//    for ( Movable m : ins ) {
-//      size+=m.size;
-//      if ( m.speed < minspeed ) {
-//        minspeed = m.speed;
-//      }
-
-//      menu.add( new RectButton ( m.name, 3*width/4, height/4 + ins.indexOf(m)*height/8, width/4, height/8 ) );
-//    }
-//    super( name, x, y, speed, size, cbs, 0, 0 );
-//  }
-
-//  void displayMenu() {
-//    super.displayMenu();
-//    for ( RectButton b : menu ) {
-//      b.draw();
-//    }
-//  }
-//}
