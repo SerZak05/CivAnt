@@ -393,7 +393,7 @@ class NestBuilder extends Worker {
   void build () {
     //nest.isSelected = false;
     entities.add( new Nest( new EntityBuilder( "Builded nest", x, y )
-      .setCbs(canBeSelected)
+     .setCbs(canBeSelected)
       .setFus(3)));
     entities.remove(this);
   }
