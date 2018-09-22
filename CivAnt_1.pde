@@ -6,6 +6,8 @@ modeType mode = modeType.menu;
 static ArrayList<RectButton> menu = new ArrayList<RectButton>();
 CircButton backToMenu = new CircButton ( "", 10, 10, 20 );
 
+final int PLAYER_NUM = 0;
+
 PVector camPos, scalePos;
 float scaleFactor = 1;
 
@@ -29,13 +31,13 @@ void setup() {
   //shapeMode(CENTER);
   rectMode(CORNERS);
   textAlign( LEFT, TOP );
-  FieldGenerator gen = new FieldGenerator ( 20, 30, (int)random(10000) );
+  FieldGenerator gen = new FieldGenerator ( 20, 30, (int)random(1e+9) );
   field = gen.generateField();
   println(gen.seed);
 
   entities = new ArrayList<Entity>();
   //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
-  entities.add ( new Nest( new EntityBuilder( "Nest", 4, 5 )
+  entities.add ( new Nest( new EntityBuilder( "Nest", 2, 5 )
     .setFus(3)));
   targetHex = new Hex ( new PVector ( 0, 0 ), 0 );
 }
@@ -93,7 +95,7 @@ void mousePressed() {
       for ( int i = 0; i < entities.size(); i++ ) {
         Entity en = entities.get(i);
 
-        if ( en.icon == null || !en.canBeSelected ) continue;
+        if ( en.icon == null || en.player != PLAYER_NUM ) continue;
         //pushMatrix();
         //translate ( field.hexes[en.x][en.y].center.x, field.hexes[en.x][en.y].center.y );
         if ( en.icon.isPressed()) {
@@ -170,6 +172,7 @@ void draw() {
     //scale ( scaleFactor );
     translate( camPos.x, camPos.y );
     background(0);
+    //field.updateSpace();
     field.draw();
     //gatherer.updateNest();
     //gatherer.draw();

@@ -1,9 +1,11 @@
 class FieldGenerator {
-  int x, y;
-  int grassClusters = 10;
-  int clusterSize = 50;
-  int riverLength = 20;
-  int riverNum = 2;
+  final int x, y;
+  final int grassClusters = 10;
+  final int clusterSize = 50;
+  final int rockNum = 10;
+  final int rockMaxSize = 5;
+  final int riverLength = 20;
+  final int riverNum = 2;
   int seed;
   FieldGenerator ( int x, int y, int seed ) {
     this.seed = seed;
@@ -15,7 +17,7 @@ class FieldGenerator {
   Field generateField() {
     Field result = new Field ( x, y );
 
-    /// generating graas clusters ///
+    /// generating grass clusters ///
     for ( int i = 0; i < grassClusters; i++ ) {
       ArrayList<HexCoor> cluster = new ArrayList<HexCoor>();
       //result.hexes[randomHex().x][randomHex().y].resource = ResourceType.Grass;
@@ -49,6 +51,43 @@ class FieldGenerator {
       for ( int j = 0; j < random ( cluster.size()/2 ); j++ ) {
         HexCoor coor = cluster.get((int)random(cluster.size()));
         result.hexes[coor.x][coor.y].resource = ResourceType.Flower;
+      }
+    }
+    /// generating rocks ///
+    for ( int i = 0; i < rockNum; i++ ) {
+      int size = (int)random(1, rockMaxSize);
+      ArrayList<HexCoor> rock = new ArrayList<HexCoor>(size);
+      rock.add( randomHex() );
+      ArrayList<HexCoor> neighbours = new ArrayList<HexCoor>();
+      // setting up neighbours
+      HexCoor[] neigh = result.getNeigh ( rock.get(0).x, rock.get(0).y );
+      for ( HexCoor hex : neigh ) {
+        if ( hex.x < 0 || hex.x >= result.w || hex.y < 0 || hex.y >= result.h ) {
+          continue;
+        }
+        neighbours.add ( hex );
+      }
+      for ( int j = 0; j < size; j++ ) {
+        float cost = 1e+5;
+        HexCoor next = new HexCoor(1000, 1000);
+        for ( HexCoor h : neighbours ) {
+          float c = random(0.75, 1.25)*h.dist(h);
+          if ( cost > c ) {
+            next = new HexCoor( h.x, h.y );
+          }
+        }
+        rock.add(next);
+        HexCoor[] nextNeigh = result.getNeigh ( next.x, next.y );
+        for ( HexCoor hex : neigh ) {
+          if ( hex.x < 0 || hex.x >= result.w || hex.y < 0 || hex.y >= result.h ) {
+            continue;
+          }
+          neighbours.add ( hex );
+        }
+        neighbours.remove(next);
+      }
+      for ( HexCoor hex : rock ) {
+        result.hexes[hex.x][hex.y].capacity = 1;
       }
     }
 

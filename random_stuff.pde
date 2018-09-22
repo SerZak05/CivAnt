@@ -5,7 +5,16 @@ class HexCoor {
     this.y = y;
   }
   int dist ( HexCoor hex ) {
-    return abs(x-hex.x) + abs(y-hex.y);
+    int xSteps = x-hex.x;
+    int ySteps = y-hex.y;
+    //println( "xSteps:", xSteps, "ySteps", ySteps );
+    if ( (xSteps >= 0 && ySteps >= 0) || (xSteps <= 0 && ySteps <= 0) ) {
+      return xSteps + ySteps;
+    } else {
+      int diagSteps = min( abs(xSteps), abs(ySteps) );
+      //println("DiagSteps:", diagSteps);
+      return diagSteps + abs(abs(xSteps)-abs(ySteps));
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 class Hex {
-  boolean isVisible = false, isOpened = false;
+  boolean isVisible = false, isOpened = true;
   int capacity; // over all capacity
   int space; // current capacity
   final PVector center;
@@ -231,6 +231,7 @@ class Field {
         int H = abs( neighbour.x - tx ) + abs( neighbour.y - ty );
         int F = G + H;
         //println ( "Neighbours' F = " + F );
+
         if ( !open.contains(neighbour) || F < neighbour.F ) {
           neighbour.G = G;
           neighbour.H = H;
@@ -283,28 +284,17 @@ class Field {
         shape.setFill(true);
         shape.setFill( 50 );
 
-
-        shape( textures[hexes[i][j].resource.ordinal()], hexes[i][j].center.x, hexes[i][j].center.y );
+        shape( textures[0], hexes[i][j].center.x, hexes[i][j].center.y );
+        //shape( textures[hexes[i][j].resource.ordinal()], hexes[i][j].center.x, hexes[i][j].center.y );
 
         // draw resource
         switch ( hexes[i][j].resource ) {
           //case None:
           //  shape( shape, hexes[i][j].center.x, hexes[i][j].center.y );
           //  break;
-          //case Grass:
-          //  //for ( int k = 0; k < 200; k++ ) {
-          //  //  PVector coor = new PVector ( 0, 0 );
-          //  //  while ( !isInside(i, j, coor.x, coor.y) ) {
-          //  //    coor = new PVector ( random ( hexes[i][j].center.x, hexes[i][j].center.x+HEX_SIDE_SIZE*2 ), 
-          //  //      random ( hexes[i][j].center.y - HEX_SIDE_SIZE/2, hexes[i][j].center.y + HEX_SIDE_SIZE/2 ) );
-          //  //  }
-          //  //  //println ( coor );
-          //  //  stroke ( random(50), 255, 50 );
-          //  //  line ( coor.x, coor.y, coor.x, coor.y-10 );
-          //  shape( grassShape, hexes[i][j].center.x, hexes[i][j].center.y );
-          //  break;
         case Flower:
           //shape.setFill(false);
+          shape( textures[1], hexes[i][j].center.x, hexes[i][j].center.y );
           pushMatrix();
           translate ( hexes[i][j].center.x + HEX_SIDE_SIZE, hexes[i][j].center.y );
           noStroke();
@@ -317,11 +307,35 @@ class Field {
           ellipse ( 0, 0, HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
           popMatrix();
           break;
+        case Grass:
+          //for ( int k = 0; k < 200; k++ ) {
+          //  PVector coor = new PVector ( 0, 0 );
+          //  while ( !isInside(i, j, coor.x, coor.y) ) {
+          //    coor = new PVector ( random ( hexes[i][j].center.x, hexes[i][j].center.x+HEX_SIDE_SIZE*2 ), 
+          //      random ( hexes[i][j].center.y - HEX_SIDE_SIZE/2, hexes[i][j].center.y + HEX_SIDE_SIZE/2 ) );
+          //  }
+          //  //println ( coor );
+          //  stroke ( random(50), 255, 50 );
+          //  line ( coor.x, coor.y, coor.x, coor.y-10 );
+          shape( textures[1], hexes[i][j].center.x, hexes[i][j].center.y );
+          break;
         }
-        if ( hexes[i][j].space == 0 ) {
-          //println ( i, j );
+        // draw terrain
+        switch ( hexes[i][j].capacity ) {
+        case 0 : 
           shape ( wall, hexes[i][j].center.x, hexes[i][j].center.y );
+          break;
+        case 1 :
+          shape ( shape, hexes[i][j].center.x, hexes[i][j].center.y );
+          break;
+          //if ( hexes[i][j].capacity == 0 ) {
+          //  //println ( i, j );
+          //  shape ( wall, hexes[i][j].center.x, hexes[i][j].center.y );
+          //}
         }
+        fill(0);
+        textSize(15);
+        text("Cap: " + hexes[i][j].capacity + " Sp: " + hexes[i][j].space, hexes[i][j].center.x, hexes[i][j].center.y );
       }
     }
   }
@@ -334,7 +348,7 @@ enum ResourceType {
 
 
 class ResourceGatherer extends Entity {
-  int nx = -1, ny = -1; // nearest nest`s coor
+  HexCoor nest; // nearest nest`s coor
   ResourceGatherer ( int x, int y ) {
     super ( new EntityBuilder( "", x, y ) );
     this.x = x;
@@ -343,20 +357,25 @@ class ResourceGatherer extends Entity {
 
   void update() {
     super.update();
-    nx = ny = -1;
-    float dist = 1e+10;
+    //nx = ny = -1;
+    int dist = (int)1e+10;
     for ( Entity en : entities ) {
+      //println ( en.getClass().getSimpleName() );
       if ( en instanceof Nest ) {
-        if ( nx == -1 && ny == -1 ) {
-          nx = en.x;
-          ny = en.y;
+        if ( nest == null ) {
+          nest = new HexCoor( en.x, en.y );
+          dist = nest.dist ( new HexCoor( x, y ) );
+          //println( "Nest == null", nest.x, nest.y, dist ); 
           continue;
         }
-        if ( PVector.dist ( field.hexes[x][y].center, field.hexes[nx][ny].center ) < dist ) {
-          nx = en.x;
-          ny = en.y;
-          dist = PVector.dist ( field.hexes[x][y].center, field.hexes[nx][ny].center );
+        if ( new HexCoor( x, y ).dist ( new HexCoor(en.x, en.y) ) < dist ) {
+          //nx = en.x;
+          //ny = en.y;
+          nest = new HexCoor( en.x, en.y );
+          dist = nest.dist( new HexCoor( x, y ) );
+          //println( "Nest != null", en.x, en.y, "", nest.x, nest.y, dist );
         }
+        //println ( "Gatherers coor:", x, y, "Nearest nest coor:", nest.x, nest.y, "Current nest coor:", en.x, en.y, dist );
       }
     }
   }
@@ -372,6 +391,6 @@ class ResourceGatherer extends Entity {
     ellipse ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 10, 10 );
     stroke ( 0, 255, 0 );
     line ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 
-      field.hexes[nx][ny].center.x+HEX_SIDE_SIZE, field.hexes[nx][ny].center.y );
+      field.hexes[nest.x][nest.y].center.x+HEX_SIDE_SIZE, field.hexes[nest.x][nest.y].center.y );
   }
 }
