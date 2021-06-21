@@ -8,8 +8,7 @@ CircButton backToMenu = new CircButton ( "", 10, 10, 20 );
 
 final int PLAYER_NUM = 0;
 
-PVector camPos, scalePos;
-float scaleFactor = 1;
+Camera camera;
 
 final float HEX_SIDE_SIZE = 50;
 Field field;
@@ -26,8 +25,9 @@ void setup() {
   menu.add( new RectButton ( "Play", width/2-textWidth("Play")/2, height/2, textWidth("Play"), textAscent()+textDescent() ));
   menu.add( new RectButton ( "Help", width/2-textWidth("Help")/2, height/2+textAscent()+textDescent(), textWidth("Help"), textAscent()+textDescent() ));
   menu.add( new RectButton ( "Quit", width/2-textWidth("Quit")/2, height/2+textAscent()*2+textDescent()*2, textWidth("Quit"), textAscent()+textDescent() ));
-
-  camPos = new PVector ( 0, 0 );
+  
+  camera = new Camera();
+  
   //shapeMode(CENTER);
   rectMode(CORNERS);
   textAlign( LEFT, TOP );
@@ -53,43 +53,31 @@ void nextTurn() {
   //gatherer.nextTurn();
 }
 
+void mouseDragged() {
+  camera.mouseDragged();
+}
+
 void keyPressed () {
+  camera.keyPressed();
   // next turn
   if ( mode == modeType.game ) {
     switch ( key ) {
     case ' ':
       nextTurn();
       break;
-    case 'w' :
-      camPos.y+=5;
-      break;
-    case 'a' :
-      camPos.x+=5;
-      break;
-    case 's' :
-      camPos.y-=5;
-      break;
-    case 'd' :
-      camPos.x-=5;
-      break;
-    case 'z' : 
-      scaleFactor*=1.1;
-      //PVector mousePos = new PVector ( mouseX/scaleFactor, mouseY/scaleFactor );
-      //camPos.add( PVector.sub( camPos, mousePos ).div(10) );
-      //println ( "MousePos:", mousePos, "camPos:", camPos, "scale:", scaleFactor );
-      break;
-    case 'c' :
-      scaleFactor/=1.1;
-      break;
     }
   }
+}
+
+void keyReleased() {
+  camera.keyReleased();
 }
 
 void mousePressed() {
   if ( mode == modeType.game ) {
     if ( backToMenu.isPressed(0) ) {
       mode = modeType.menu;
-      camPos.sub ( camPos );
+      
     } else if ( mouseButton == LEFT ) {
       //boolean isSelected = false; // checks, if something is selected
       for ( int i = 0; i < entities.size(); i++ ) {
@@ -125,13 +113,6 @@ void selectEntity( int i ) {
   }
 }
 
-void mouseDragged() {
-  if ( mode == modeType.game ) {
-    if ( mouseButton == LEFT ) {
-      camPos.add( mouseX - pmouseX, mouseY - pmouseY );
-    }
-  }
-}
 
 void draw() {
   switch ( mode ) {
@@ -167,10 +148,14 @@ void draw() {
     break;
 
   case game :
-    targetHex = field.hexes[(int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).x][(int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).y];
+    camera.update();
+    targetHex = 
+      field.hexes
+      [(int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).x]
+      [(int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).y];
     pushMatrix();
     //scale ( scaleFactor );
-    translate( camPos.x, camPos.y );
+    translate( camera.getCameraPos().x, camera.getCameraPos().y );
     background(0);
     //field.updateSpace();
     field.draw();

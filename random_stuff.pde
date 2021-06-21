@@ -58,8 +58,8 @@ class RectButton extends Button {
   }
 
   boolean isPressed() {
-    return mousePressed && mouseX-camPos.x > coor.x && mouseX-camPos.x < coor.x + sizeX && 
-      mouseY-camPos.y > coor.y && mouseY-camPos.y < coor.y + sizeY;
+    return mousePressed && mouseX-camera.getCameraPos().x > coor.x && mouseX-camera.getCameraPos().x < coor.x + sizeX && 
+      mouseY-camera.getCameraPos().y > coor.y && mouseY-camera.getCameraPos().y < coor.y + sizeY;
   }
   boolean isPressed( int notMoved ) {
     return mousePressed && mouseX > coor.x && mouseX < coor.x + sizeX && 
@@ -85,7 +85,7 @@ class CircButton extends Button {
     super ( name, coor.x, coor.y, size );
   }
   boolean isPressed() {
-    return mousePressed && dist ( coor.x, coor.y, mouseX-camPos.x, mouseY-camPos.y ) < sizeX/2;
+    return mousePressed && dist ( coor.x, coor.y, mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ) < sizeX/2;
   }
   boolean isPressed( int notMoved ) {
     return mousePressed && dist ( coor.x, coor.y, mouseX, mouseY ) < sizeX/2;

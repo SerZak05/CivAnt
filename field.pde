@@ -17,6 +17,39 @@ class Hex {
     center = new PVector ( coor.x, coor.y );
     resource = r;
   }
+  
+  PShape getShape() {
+    PShape shape = createShape();
+
+    shape.beginShape();
+    shape.vertex( 0, 0 );
+    shape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    shape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    shape.vertex( 2*HEX_SIDE_SIZE, 0 );
+    shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    shape.endShape(CLOSE);
+    
+    return shape;
+  }
+  
+  PShape getShape(color fill, color stroke) {
+      PShape shape = createShape();
+
+    shape.beginShape();
+    shape.vertex( 0, 0 );
+    shape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    shape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
+    shape.vertex( 2*HEX_SIDE_SIZE, 0 );
+    shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
+    
+    shape.fill(fill);
+    shape.stroke(stroke);
+    shape.endShape(CLOSE);
+    
+    return shape;
+  }
 }
 
 class Field {
@@ -55,58 +88,15 @@ class Field {
     //hexes[3][2].resource = ResourceType.Grass;
 
     // setting the shape
-    wall = createShape();
+    Hex hex = new Hex(new PVector(), 0);
+    wall = hex.getShape(color(0, 0, 200), color(255));
 
-    wall.beginShape();
-    wall.fill( 0, 0, 200 );
-    wall.stroke(255);
-    wall.vertex( 0, 0 );
-    wall.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    wall.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    wall.vertex( 2*HEX_SIDE_SIZE, 0 );
-    wall.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    wall.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    wall.endShape(CLOSE);
+    shape = hex.getShape(color(50), color(255));
 
-    shape = createShape();
-
-    shape.beginShape();
-    shape.fill( 50 );
-    shape.stroke(255);
-    shape.vertex( 0, 0 );
-    shape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    shape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    shape.vertex( 2*HEX_SIDE_SIZE, 0 );
-    shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    shape.endShape(CLOSE);
-
-    final PShape sandShape;
-    sandShape = createShape();
-    sandShape.beginShape();
-    sandShape.fill( 200, 200, 0 );
-    sandShape.stroke(255);
-    sandShape.vertex( 0, 0 );
-    sandShape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    sandShape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    sandShape.vertex( 2*HEX_SIDE_SIZE, 0 );
-    sandShape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    sandShape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    sandShape.endShape(CLOSE);
+    final PShape sandShape = hex.getShape(color(200, 200, 0), color(255));
     textures[0] = sandShape;
 
-    final PShape grassShape;
-    grassShape = createShape();
-    grassShape.beginShape();
-    grassShape.fill( 10, 200, 10 );
-    grassShape.stroke(255);
-    grassShape.vertex( 0, 0 );
-    grassShape.vertex( HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    grassShape.vertex( 3*HEX_SIDE_SIZE/2, - HEX_SIDE_SIZE/2 );
-    grassShape.vertex( 2*HEX_SIDE_SIZE, 0 );
-    grassShape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    grassShape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    grassShape.endShape(CLOSE);
+    final PShape grassShape = hex.getShape(color(10, 200, 10), color(255));
     textures[1] = grassShape;
 
     textures[2] = grassShape;

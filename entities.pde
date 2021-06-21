@@ -174,7 +174,7 @@ class Movable extends Entity {
   void updateMenu() {
     if ( pmousePressed && !mousePressed && player == PLAYER_NUM ) { // mouse released
       if ( mouseButton == RIGHT ) {
-        HexCoor target = field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y );
+        HexCoor target = field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y );
         if ( target != null ) {
           field.hexes[x][y].space += size;
           move ( target.x, target.y );
@@ -287,7 +287,11 @@ class Movable extends Entity {
       fill ( 255, 255, 0 );
       if ( mousePressed && mouseButton == RIGHT && player == PLAYER_NUM ) {
         stroke(255);
-        ArrayList<HexCoor> path = field.path( x, y, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).x, (int)field.coorsToHex( mouseX-camPos.x, mouseY-camPos.y ).y, size );
+        ArrayList<HexCoor> path = 
+          field.path( x, y, 
+            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).x, 
+            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).y,
+            size );
         if ( path != null ) {
           path.add(0, new HexCoor ( x, y ));
           if ( path.size() <= MP+1 ) {
