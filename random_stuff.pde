@@ -36,6 +36,9 @@ class Button {
   PVector coor;
   float sizeX;
   String name;
+
+  boolean isFixed = true;
+  color pressedColor = color(200, 0, 0), releasedColor = color(255, 0, 0);
   Button ( String name, float x, float y, float sx ) {
     coor = new PVector ( x, y );
     sizeX = sx;
@@ -51,24 +54,30 @@ class Button {
 }
 
 class RectButton extends Button {
-  float sizeY;
+  private float sizeY;
   RectButton ( String name, float x, float y, float sx, float sy ) {
     super ( name, x, y, sx );
     sizeY = sy;
   }
 
   boolean isPressed() {
-    return mousePressed && mouseX-camera.getCameraPos().x > coor.x && mouseX-camera.getCameraPos().x < coor.x + sizeX && 
+    if (isFixed) {
+      return mousePressed && mouseX > coor.x && mouseX < coor.x + sizeX && 
+        mouseY > coor.y && mouseY < coor.y + sizeY;
+    }
+    return mousePressed && 
+      mouseX-camera.getCameraPos().x > coor.x && mouseX-camera.getCameraPos().x < coor.x + sizeX && 
       mouseY-camera.getCameraPos().y > coor.y && mouseY-camera.getCameraPos().y < coor.y + sizeY;
-  }
-  boolean isPressed( int notMoved ) {
-    return mousePressed && mouseX > coor.x && mouseX < coor.x + sizeX && 
-      mouseY > coor.y && mouseY < coor.y + sizeY;
   }
 
   void draw() {
     pushStyle();
     rectMode ( CORNER );
+    if (isPressed()) {
+      fill(pressedColor);
+    } else {
+      fill(releasedColor);
+    }
     rect ( coor.x, coor.y, sizeX, sizeY );
     fill(255);
     text ( name, coor.x, coor.y );
@@ -85,13 +94,18 @@ class CircButton extends Button {
     super ( name, coor.x, coor.y, size );
   }
   boolean isPressed() {
+    if (isFixed) {
+      return mousePressed && dist ( coor.x, coor.y, mouseX, mouseY ) < sizeX/2;
+    }
     return mousePressed && dist ( coor.x, coor.y, mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ) < sizeX/2;
-  }
-  boolean isPressed( int notMoved ) {
-    return mousePressed && dist ( coor.x, coor.y, mouseX, mouseY ) < sizeX/2;
   }
 
   void draw() {
+    if (isPressed()) {
+      fill(pressedColor);
+    } else {
+      fill(releasedColor);
+    }
     ellipse ( coor.x, coor.y, sizeX, sizeX );
     fill ( 255 );
     text ( name, coor.x - textWidth(name), coor.y );

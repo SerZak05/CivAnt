@@ -130,8 +130,16 @@ class Movable extends Entity {
     size = builder.size;
 
     ArrayList<CircButton> buttons = new ArrayList();
-    buttons.add(new CircButton ( "", field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/3 ));
-    icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons ); 
+    CircButton circleButton = 
+      new CircButton ( "", 
+        field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, 
+        field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, 
+        HEX_SIDE_SIZE/3 );
+    circleButton.isFixed = false;
+    buttons.add(circleButton);
+    
+    icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons );
+    icon.isFixed = false;
     //addMouseListener( this );
     fill = color ( 255, 255, 0 );
 
@@ -364,7 +372,7 @@ class Worker extends Movable {
 
   void updateMenu() {
     super.updateMenu();
-    if ( toBuild.isPressed(0) ) {
+    if ( toBuild.isPressed() ) {
       build();
     }
     //println(this);
@@ -445,7 +453,7 @@ class GathererBuilder extends Worker {
   }
 
   void updateMenu() {
-    if ( toBuild.isPressed(0) && leftTurns <= 0 ) {
+    if ( toBuild.isPressed() && leftTurns <= 0 ) {
       leftTurns = 5;
       isActive = false;
       isSelected = false;

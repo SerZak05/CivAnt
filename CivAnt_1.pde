@@ -75,7 +75,7 @@ void keyReleased() {
 
 void mousePressed() {
   if ( mode == modeType.game ) {
-    if ( backToMenu.isPressed(0) ) {
+    if ( backToMenu.isPressed() ) {
       mode = modeType.menu;
       
     } else if ( mouseButton == LEFT ) {
@@ -184,15 +184,19 @@ void draw() {
       }
     }
     updateIncome();
+
+
     fill ( 255 );
     textSize ( 30 );
     text ( "Food: " + (int)food, 20, 10 );
     fill ( income < 0 ? color(255, 0, 0) : color(0, 255, 0) );
-    text ( (int)income, 30+textWidth("Food " + (int)food ), 10 );
+    text ( (int)income, 40+textWidth("Food " + (int)food ), 10 );
     textSize ( 15 );
     fill ( 255, 0, 0 );
     backToMenu.draw();
     break;
+
+
   case help :
     background(0);
     textSize ( 40 );

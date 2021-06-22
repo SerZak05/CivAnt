@@ -44,6 +44,9 @@ class Nest extends Entity {
     buttons.add( new CircButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
     buttons.add( new RectButton ( "", field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 ) );
     buttons.add( new CircButton ( "", field.hexes[x][y].center.x+7*HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/4, HEX_SIDE_SIZE/2 ) );
+    for ( Button b : buttons ) {
+      b.isFixed = false;
+    }
     icon = new CustomButton ( name, field.hexes[x][y].center.x+HEX_SIDE_SIZE/4, field.hexes[x][y].center.y-HEX_SIDE_SIZE/2, buttons );
   }
 
@@ -69,7 +72,8 @@ class Nest extends Entity {
     if ( availableProj.size() != menu.size() ) { //update buttons
       menu.clear();
       for ( int i = 0; i < availableProj.size(); i++ ) {
-        menu.add( new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 ));
+        RectButton button = new RectButton ( availableProj.get(i).name, 3*width/4, height/4 + i*height/8, width/4, height/8 );
+        menu.add(button);
       }
     }
   }
@@ -77,7 +81,7 @@ class Nest extends Entity {
   void updateMenu() {
     updateButtons();
     for ( int i = 0; i < menu.size(); i++ ) {
-      if ( menu.get(i).isPressed(0) && food >= availableProj.get(i).foodToDo ) {
+      if ( menu.get(i).isPressed() && food >= availableProj.get(i).foodToDo ) {
         if ( projects.isEmpty() ) {
           leftTurns = availableProj.get(i).turnsToDo;
         }
