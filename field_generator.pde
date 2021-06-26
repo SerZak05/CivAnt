@@ -15,7 +15,7 @@ class FieldGenerator {
   }
 
   Field generateField() {
-    Field result = new Field ( x, y );
+    Field result = new Field(gameWidget, x, y);
 
     /// generating grass clusters ///
     for ( int i = 0; i < grassClusters; i++ ) {

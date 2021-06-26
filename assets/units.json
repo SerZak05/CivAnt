@@ -1,0 +1,50 @@
+{
+	"Recon": {
+		"foodCost": 15,
+		"foodConsumption": 1,
+		"turnsToMake": 3,
+		"behaviours": [
+			{
+				"type": "Movable",
+				"speed": 4,
+				"size": 1
+			}
+		]
+	},
+	"Gatherer": {
+		"foodCost": 25,
+		"foodConsumption": 2,
+		"turnsToMake": 5,
+		"behaviours": [
+			{
+				"type": "Builder",
+				"buildings": [
+					"Gathering route"
+				]
+			},
+			{
+				"type": "Movable",
+				"speed": 3,
+				"size": 2
+			}
+		]
+		
+	},
+	"Builder": {
+		"foodCost": 25,
+		"foodConsumption": 2,
+		"behaviours": [
+			{
+				"type": "Builder",
+				"buildings": [
+					"Nest"
+				]
+			},
+			{
+				"type": "Movable",
+				"speed": 3,
+				"size": 2
+			}
+		]
+	}
+}

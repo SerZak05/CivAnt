@@ -74,23 +74,23 @@ class Camera {
   void mouseDragged() {
     if ( mode == modeType.game ) {
       if ( mouseButton == LEFT ) {
-        camPos.add( mouseX - pmouseX, mouseY - pmouseY );
+        field.coor.add( mouseX - pmouseX, mouseY - pmouseY );
       }
     }
   }
 
   void update() {
     if (movingUp) {
-      camPos.y += cameraSpeed;
+      field.coor.y += cameraSpeed;
     }
     if (movingLeft) {
-      camPos.x += cameraSpeed;
+      field.coor.x += cameraSpeed;
     }
     if (movingDown) {
-      camPos.y -= cameraSpeed;
+      field.coor.y -= cameraSpeed;
     }
     if (movingRight) {
-      camPos.x -= cameraSpeed;
+      field.coor.x -= cameraSpeed;
     }
   }
 }

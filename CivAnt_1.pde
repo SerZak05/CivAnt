@@ -3,43 +3,100 @@ enum modeType { //<>// //<>//
 }
 
 modeType mode = modeType.menu;
-static ArrayList<RectButton> menu = new ArrayList<RectButton>();
-CircButton backToMenu = new CircButton ( "", 10, 10, 20 );
 
 final int PLAYER_NUM = 0;
 
 Camera camera;
+
+Widget currScene = null;
+Widget mainMenuWidget, gameWidget;
 
 final float HEX_SIDE_SIZE = 50;
 Field field;
 
 ArrayList<Entity> entities;
 
-Hex targetHex;
-
 float food = 100, income = 0; // overall food supply
 
 void setup() {
   fullScreen();
   textSize(40);
-  menu.add( new RectButton ( "Play", width/2-textWidth("Play")/2, height/2, textWidth("Play"), textAscent()+textDescent() ));
-  menu.add( new RectButton ( "Help", width/2-textWidth("Help")/2, height/2+textAscent()+textDescent(), textWidth("Help"), textAscent()+textDescent() ));
-  menu.add( new RectButton ( "Quit", width/2-textWidth("Quit")/2, height/2+textAscent()*2+textDescent()*2, textWidth("Quit"), textAscent()+textDescent() ));
-  
+  mainMenuWidget = new Widget(null, new PVector(width / 2, height / 4));
+  gameWidget = new Widget(null);
+  {
+    Label l = new Label(mainMenuWidget);
+    l.textSize = 70;
+    l.textAlignment = LEFT;
+    l.fill = color(50, 255, 0);
+    l.text = "CivAnt";
+    mainMenuWidget.pack(l);
+  }
+  {
+    RectButton b = new RectButton( mainMenuWidget, "Play", 
+      0, 0, 
+      textWidth("Play"), textAscent()+textDescent() );
+    b.callback = new ButtonCallback() {
+      @Override
+        public void callback(Button b) {
+        mode = modeType.game;
+      }
+    };
+    mainMenuWidget.pack(b);
+  }
+  {
+    RectButton b = new RectButton( mainMenuWidget, "Help", 
+      0, 0, 
+      textWidth("Help"), textAscent()+textDescent() );
+    b.callback = new ButtonCallback() {
+      @Override
+        public void callback(Button b) {
+        mode = modeType.help;
+      }
+    };
+    mainMenuWidget.pack(b);
+  }
+  {
+    RectButton b = new RectButton( mainMenuWidget, "Quit", 
+      0, 0, 
+      textWidth("Quit"), textAscent()+textDescent() );
+    b.callback = new ButtonCallback() {
+      @Override
+        public void callback(Button b) {
+        exit();
+      }
+    };
+    mainMenuWidget.pack(b);
+  }
+
+  CircButton backToMenuButton = new CircButton(gameWidget, "Back to menu", 15, 15, 100);
+  backToMenuButton.callback = new ButtonCallback() {
+    @Override
+      public void callback(Button b) {
+      mode = modeType.menu;
+    }
+  };
+
+  gameWidget.addChild(backToMenuButton);
+
   camera = new Camera();
-  
+
   //shapeMode(CENTER);
   rectMode(CORNERS);
   textAlign( LEFT, TOP );
   FieldGenerator gen = new FieldGenerator ( 20, 30, (int)random(1e+9) );
   field = gen.generateField();
   println(gen.seed);
+  gameWidget.addChild(field);
 
   entities = new ArrayList<Entity>();
-  //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
-  entities.add ( new Nest( new EntityBuilder( "Nest", 2, 5 )
-    .setFus(3)));
-  targetHex = new Hex ( new PVector ( 0, 0 ), 0 );
+  JSONObject unitsConfig = loadJSONObject("assets/units.json");
+  Entity e = new Entity(unitsConfig, "Recon", new HexCoor(0, 0));
+  e.init();
+  entities.add(e);
+  
+  /* //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
+   entities.add ( new Nest( new EntityBuilder( "Nest", 2, 5 )
+   .setFus(3)));*/
 }
 
 void nextTurn() {
@@ -75,10 +132,7 @@ void keyReleased() {
 
 void mousePressed() {
   if ( mode == modeType.game ) {
-    if ( backToMenu.isPressed() ) {
-      mode = modeType.menu;
-      
-    } else if ( mouseButton == LEFT ) {
+    if ( mouseButton == LEFT ) {
       //boolean isSelected = false; // checks, if something is selected
       for ( int i = 0; i < entities.size(); i++ ) {
         Entity en = entities.get(i);
@@ -115,85 +169,28 @@ void selectEntity( int i ) {
 
 
 void draw() {
+  background(0);
+  if (currScene != null) {
+    currScene.updateChildren();
+    currScene.drawChildren();
+  }
   switch ( mode ) {
-  case menu :
-    background ( 0 );
-    textSize ( 70 );
-    fill ( 50, 255, 0 );
-    text ( "CivAnt 1", width/2-textWidth("CivAnt 1")/2, height/4 );
-    textSize ( 40 );
-    noStroke();
-
-    if ( mouseButton == LEFT ) {
-      if ( menu.get(0).isPressed() ) {
-        mode = modeType.game;
-        break;
-      } 
-      if ( menu.get(1).isPressed() ) {
-        mode = mode.help;
-        break;
-      }
-      if ( menu.get(2).isPressed() ) {
-        exit();
-      }
-    }
-    for ( RectButton b : menu ) {
-      if ( !b.isPressed() ) {
-        fill ( 0, 255, 0 );
-      } else {
-        fill ( 255, 0, 0 );
-      }
-      b.draw();
-    }
+  case menu:
+    currScene = mainMenuWidget;
     break;
-
   case game :
+    currScene = gameWidget;
     camera.update();
-    targetHex = 
-      field.hexes
-      [(int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).x]
-      [(int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).y];
-    pushMatrix();
-    //scale ( scaleFactor );
-    translate( camera.getCameraPos().x, camera.getCameraPos().y );
-    background(0);
-    //field.updateSpace();
-    field.draw();
-    //gatherer.updateNest();
-    //gatherer.draw();
-    for ( int i = 0; i < entities.size(); i++ ) {
-      entities.get(i).update();
-      //for ( Entity en : field.hexes[entities.get(i).x][entities.get(i).y].entities ) {
-      //  if ( en instanceof Squad ) {
-      //    en
-      //  }
-      //if ( targetHex != null ) {
-      //  println ( targetHex.center );
-      //}
-    }
-    for ( Entity mov : entities ) {
-      mov.draw();
-    }
-    popMatrix();
-    for ( Entity en : entities ) {
-      if ( targetHex.entities.contains(en) ) {
-        en.displayInfo();
-      }
-      if ( en.isSelected ) {
-        en.displayMenu();
-      }
-    }
     updateIncome();
 
 
     fill ( 255 );
     textSize ( 30 );
-    text ( "Food: " + (int)food, 20, 10 );
+    text ( "Food: " + (int)food, 100, 10 );
     fill ( income < 0 ? color(255, 0, 0) : color(0, 255, 0) );
-    text ( (int)income, 40+textWidth("Food " + (int)food ), 10 );
+    text ( (int)income, 120+textWidth("Food " + (int)food ), 10 );
     textSize ( 15 );
     fill ( 255, 0, 0 );
-    backToMenu.draw();
     break;
 
 

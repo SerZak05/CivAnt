@@ -1,6 +1,6 @@
 
 /// Nest ///
-class Nest extends Entity {
+/*class Nest extends Entity {
   int leftTurns = 0;
   ArrayList<Entity> projects = new ArrayList<Entity>();
   ArrayList<Entity> availableProj = new ArrayList<Entity>();
@@ -158,4 +158,4 @@ class Nest extends Entity {
 //      }
 
 //      menu.add( new RectButton ( m.name, 3*width/4, height/4 + ins.indexOf(m)*height/8, width/4, height/8 ) );
-//    }
+//    }*/
