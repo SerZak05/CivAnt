@@ -3,6 +3,7 @@
 // By combining different behaviours we can get different objects
 
 class Behaviour {
+  protected String name = "";
   protected Entity mEntity;
   // Widgets that will pop up when entity is selected or mouse is hovering above it
   protected Widget infoWidget, menuWidget; 
@@ -24,6 +25,10 @@ class Behaviour {
   void nextTurn() {}
   void init() {}
   void update() {}
+  
+  String getName() {
+    return name;
+  }
 }
 
 
@@ -31,21 +36,24 @@ class Movable extends Behaviour {
   int speed, MP, size; //MP (move points) - current state
   boolean isActive = true;
   color fill;
+  
+  private Label speedLabel;
 
   Movable (Entity e, JSONObject config) {
     super(e);
     speed = config.getInt("speed");
     MP = speed;
     size = config.getInt("size");
+    name = config.getString("type");
     
     // Config of widgets
     infoWidget = new Widget(gameWidget);
-    Label speedLabel = new Label(infoWidget, new PVector(0, 0));
+    speedLabel = new Label(infoWidget, new PVector(0, 0));
     speedLabel.textAlignment = LEFT;
     speedLabel.textSize = 30;
     speedLabel.fill = 255;
     speedLabel.background = color(200, 170, 0);
-    speedLabel.text = "Speed: " + speed;
+    speedLabel.text = "Move points: " + MP + "/" + speed;
     infoWidget.pack(speedLabel);
     Label sizeLabel = new Label(infoWidget, new PVector(0, speedLabel.getHeight()));
     sizeLabel.textAlignment = LEFT;
@@ -89,6 +97,7 @@ class Movable extends Behaviour {
   private boolean pmousePressed = false;
   @Override
   void update() {
+    speedLabel.text = "Move points: " + MP + "/" + speed;
     if ( MP <= 0 ) {
       isActive = false;
     }
@@ -104,17 +113,6 @@ class Movable extends Behaviour {
     }
     pmousePressed = mousePressed;
   }
-
-  /*void displayMenu() {
-    fill ( 255, 100, 0 );
-    rect ( 3*width/4, 0, width, height );
-    fill ( 0 );
-    textSize( (textWidth(name)>width/4 ? 30 : 60) );
-    text ( name, 3*width/4+10, 10 );
-    float first_vert_sz = textAscent()+textDescent();
-    textSize( 40 );
-    text ( "MP: " + MP + " / " + speed, 3*width/4+10, 10+first_vert_sz );
-  }*/
 
   void move( int tx, int ty ) {
     int x = mEntity.x, y = mEntity.y;

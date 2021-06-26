@@ -14,6 +14,7 @@ class Entity extends Widget {
   String name;
   int x, y; // current position on the field
   boolean isSelected = false;
+  private Button closeMenuButton;
 
   Entity (JSONObject unitsConfig, String name, HexCoor coor) {
     super(field, field.hexToCoor(coor));
@@ -22,8 +23,9 @@ class Entity extends Widget {
     x = coor.x;
     y = coor.y;
     field.hexes[x][y].entities.add(this);
-    //canBeSelected = builder.canBeSelected;
-    
+
+    println();
+    println("Configuring entity " + toString());
     JSONObject config = unitsConfig.getJSONObject(name);
     //Food config
     turnsToMake = config.getInt("turnsToMake", 0);
@@ -86,16 +88,35 @@ class Entity extends Widget {
   void updateMenuInfo() {
     menu.children.clear();
     info.children.clear();
-    Label nameLabel = new Label(info);
-    nameLabel.text = name;
-    nameLabel.fill = 0;
-    nameLabel.background = color(200, 170, 0);
-    nameLabel.textSize = 40;
-    info.pack(nameLabel);
+    Label infoNameLabel = new Label(info);
+    infoNameLabel.text = name;
+    infoNameLabel.fill = 0;
+    infoNameLabel.background = color(200, 170, 0);
+    infoNameLabel.textSize = 40;
+    info.pack(infoNameLabel);
+    Label menuNameLabel = new Label(info);
+    menuNameLabel.text = name;
+    menuNameLabel.fill = 0;
+    menuNameLabel.background = color(200, 170, 0);
+    menuNameLabel.textSize = 50;
+    menu.pack(menuNameLabel);
+    
+    Label behavioursList = new Label(info);
+    for ( Behaviour b : behaviours ) {
+      behavioursList.text += b.getName() + ' ';
+    }
+    behavioursList.fill = 0;
+    behavioursList.background = color(200, 170, 0);
+    behavioursList.textSize = 30;
+    menu.pack(behavioursList);
+    
     for ( Behaviour b : behaviours ) {
       menu.pack(b.getMenuWidget());
       info.pack(b.getInfoWidget());
     }
+    closeMenuButton = new RectButton(menu, "X", 
+      200, 0, 100, menuNameLabel.getHeight());
+    menu.addChild(closeMenuButton);
   }
   
   void update() {
@@ -104,6 +125,9 @@ class Entity extends Widget {
     }
     
     if ( isSelected ) {
+      if(closeMenuButton.isReleased()) {
+        isSelected = false;
+      }
       displayMenu();
     } else {
       hideMenu();

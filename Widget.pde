@@ -138,23 +138,40 @@ class Button extends Widget {
 
   color pressedColor = color(200, 0, 0), releasedColor = color(255, 0, 0);
 
-  ButtonCallback callback;
+  ButtonCallback callback = null;
 
   Button ( Widget parent, String name, float x, float y, float sx ) {
     super(parent, new PVector(x, y));
     sizeX = sx;
     this.name = name;
   }
-
-  boolean isPressed () {
+  
+  boolean mouseHover() {
     return false;
+  }
+  private boolean pmouseHover = false;
+  boolean mouseEnter() {
+    return !pmouseHover && mouseHover();
+  }
+  boolean mouseExit() {
+    return pmouseHover && !mouseHover();
+  }
+
+  boolean isPressed() {
+    return mousePressed && mouseHover();
+  }
+  private boolean pmousePressed = false;
+  boolean isReleased() {
+    return pmousePressed && !isPressed() && !mouseExit();
   }
 
   @Override
     void update() {
-    if (isPressed()) {
+    if (isReleased() && callback != null) {
       callback.callback(this);
     }
+    pmouseHover = mouseHover();
+    pmousePressed = isPressed();
   }
 }
 
@@ -166,9 +183,9 @@ class RectButton extends Button {
   }
 
   @Override
-    boolean isPressed() {
+    boolean mouseHover() {
     PVector globalCoors = getGlobalCoords();
-    return mousePressed && 
+    return 
       mouseX > globalCoors.x && 
       mouseX < globalCoors.x + sizeX && 
       mouseY > globalCoors.y && 
@@ -211,9 +228,9 @@ class CircButton extends Button {
   }
 
   @Override
-  boolean isPressed() {
+  boolean mouseHover() {
     PVector globalCoords = getGlobalCoords();
-    return mousePressed && dist ( globalCoords.x, globalCoords.y, mouseX, mouseY ) < sizeX/2;
+    return dist ( globalCoords.x, globalCoords.y, mouseX, mouseY ) < sizeX/2;
   }
 
   @Override
@@ -250,9 +267,9 @@ class CustomButton extends Button {
   }
 
   @Override
-    boolean isPressed() {
+    boolean mouseHover() {
     for ( Button button : parts ) {
-      if ( button.isPressed() ) return true;
+      if ( button.mouseHover() ) return true;
     }
     return false;
   }
