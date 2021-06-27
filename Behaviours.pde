@@ -2,7 +2,7 @@
 // Each object should contain multiple behaviours that control his perfomance.
 // By combining different behaviours we can get different objects
 
-class Behaviour {
+abstract class Behaviour {
   protected String name = "";
   protected Entity mEntity;
   // Widgets that will pop up when entity is selected or mouse is hovering above it
@@ -22,9 +22,9 @@ class Behaviour {
     return menuWidget;
   }
   
-  void nextTurn() {}
-  void init() {}
-  void update() {}
+  abstract void nextTurn();
+  abstract void init();
+  abstract void update();
   
   String getName() {
     return name;
@@ -73,26 +73,7 @@ class Movable extends Behaviour {
     field.updateSpace();
     field.hexes[mEntity.x][mEntity.y].space = field.hexes[mEntity.x][mEntity.y].capacity - size;
     updateVisibility();
-  }
-
-
-  /*Movable clone() {
-    /*Movable clone = (Movable)new MovableBuilder( name, x, y )
-      .setSpeed(speed)
-      .setSize(size)
-      .setMP(MP)
-      //.setCbs(canBeSelected)
-      .setFtd(foodToDo)
-      .setTtd(turnsToDo)
-      .setFus(foodUsing)
-      .setPlayer(player)
-      .build();*/
-    /*Movable clone = new Movab
-    //clone.MP = MP;
-    return clone;
-  }*/
-
-  
+  } 
 
   private boolean pmousePressed = false;
   @Override
@@ -101,7 +82,7 @@ class Movable extends Behaviour {
     if ( MP <= 0 ) {
       isActive = false;
     }
-    if ( pmousePressed && !mousePressed ) { // mouse released
+    if ( mEntity == selectedEntity && pmousePressed && !mousePressed ) { // mouse released
       if ( mouseButton == RIGHT ) {
         HexCoor target = field.getTargetHex();
         if ( target != null ) {
@@ -126,7 +107,7 @@ class Movable extends Behaviour {
     mEntity.x = tx;
     mEntity.y = ty;
     mEntity.coor.add(diff);
-    updateVisibility();
+    // updateVisibility();
     //field.hexes[x][y].space = field.hexes[x][y].capacity - size;
 
     //joining squad//
@@ -173,71 +154,115 @@ class Movable extends Behaviour {
   
   @Override
   void nextTurn() {
-    super.nextTurn();
     MP = speed;
     isActive = true;
   }
+}
 
-  /*void draw() {
-    if ( isActive ) {
-      fill = color ( 255, 255, 0 );
-    } else {
-      fill = color ( 100, 100, 0 );
+class Builder extends Behaviour {
+  private ArrayList<String> availableBuilds = new ArrayList<String>();
+  private Entity currProject = null;
+  private int currTurn, totalTurns;
+
+  private Label projectLabel;
+  private Widget projectsButtons;
+  private Label currBuilding;
+
+  Builder(Entity e, JSONObject config) {
+    super(e);
+    String[] builds = config.getJSONArray("builds").getStringArray();
+    for ( String str : builds ) {
+      availableBuilds.add(str);
     }
-    noStroke();
-    if ( isActive ) {
-      fill( 255 );
-    } else {
-      fill ( 100 );
-    }
-    if ( isSelected ) {
-      fill ( 255, 255, 0 );
-      if ( mousePressed && mouseButton == RIGHT && player == PLAYER_NUM ) {
-        stroke(255);
-        ArrayList<HexCoor> path = 
-          field.path( x, y, 
-            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).x, 
-            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).y,
-            size );
-        if ( path != null ) {
-          path.add(0, new HexCoor ( x, y ));
-          if ( path.size() <= MP+1 ) {
-            field.drawPath ( path );
-          } else {
-            ArrayList<HexCoor> firstPath = new ArrayList();
-            ArrayList<HexCoor> secondPath = new ArrayList();
-            for ( int i = 0; i < path.size(); i++ ) {
-              if ( i <= MP ) {
-                firstPath.add(path.get(i));
-              } else {
-                secondPath.add(path.get(i));
-              }
-            }
-            field.drawPath(firstPath);
-            stroke(255, 0, 0);
-            secondPath.add(0, firstPath.get(firstPath.size()-1));
-            field.drawPath(secondPath);
-          }
+    name = "Builder";
+    
+    // menu and info panels
+    menuWidget = new Widget(null);
+    projectLabel = new Label(menuWidget);
+    projectLabel.background = color(200, 170, 0);
+    projectLabel.text = "Select next project";
+    projectLabel.textSize = 30;
+    projectLabel.textAlignment = LEFT;
+    menuWidget.pack(projectLabel);
+    
+    projectsButtons = new Widget(menuWidget) {
+      @Override float getHeight() {
+        float res = 0;
+        for ( Widget child : children ) {
+          res += child.getHeight();
         }
+        return res;
+      }
+    };
+    for ( String str : availableBuilds ) {
+      Button b = new RectButton(projectsButtons, str, 300, 75) {
+        @Override
+        boolean isReleased() {
+          boolean res = super.isReleased();
+          //if (res) println("Released");
+          println(getGlobalCoords());
+          return res;
+        }
+      };
+      b.pressedColor = color(200, 0, 0);
+      b.releasedColor = color(255, 0, 0);
+      projectsButtons.pack(b);
+    }
+    menuWidget.pack(projectsButtons);
+    
+    currBuilding = new Label(menuWidget);
+    currBuilding.background = color(200, 170, 0);
+    currBuilding.text = "No project";
+    currBuilding.textSize = 30;
+    currBuilding.textAlignment = LEFT;
+    menuWidget.pack(currBuilding);
+    
+    infoWidget = null;
+  }
+  @Override
+  void init() {
+    
+  }
+  @Override
+  void nextTurn() {
+    if (currProject != null) { // if building
+      currTurn++;
+      if (currTurn == totalTurns) {
+        build();
       }
     }
-    noStroke();
-    fill ( fill );
-    ellipse( field.hexes[x][y].center.x + HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
-    if ( icon.isPressed() && mouseButton == LEFT ) {
-      fill ( 0, 0, 255 );
+    if (currProject != null) {
+      currBuilding.text = "Building: " + currProject.name + "\nTurns left: " + (totalTurns - currTurn);
+      projectLabel.text = "Change project:";
     } else {
-      if ( isActive ) {
-        fill ( 255, 0, 0 );
-      } else {
-        fill ( 100, 0, 0 );
+      currBuilding.text = "No project";
+      projectLabel.text = "Select next project:";
+    }
+  }
+  
+  @Override
+  void update() {
+    for ( Widget w : projectsButtons.children ) {
+      Button b = (Button)w;
+      if (b.isReleased()) {
+        selectProject(b.name);
       }
     }
-    textSize ( 20 );
-
-    //pushMatrix();
-    //translate( field.hexes[x][y].center.x, field.hexes[x][y].center.y );
-    icon.draw();
-    //popMatrix();
-  }*/
+  }
+  
+  private void build() {
+    currProject.player = mEntity.player;
+    currProject.init(new HexCoor(mEntity.x, mEntity.y));
+    entities.add(currProject);
+    currProject = null;
+    currTurn = 0;
+  }
+  
+  private void selectProject(String project) {
+    println("Selected a project: " + project);
+    currProject = new Entity(unitsConfig, project);
+    totalTurns = currProject.turnsToMake;
+    food -= currProject.foodToMake;
+    mEntity.deselect();
+  }
 }

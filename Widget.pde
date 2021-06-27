@@ -108,7 +108,11 @@ class Label extends Widget {
   float getHeight() {
     pushStyle();
     textSize(textSize);
-    float res = textAscent() + textDescent() + 2 * padding;
+    int lineCount = 1;
+    for ( int i = 0; i < text.length(); i++ ) {
+      if (text.charAt(i) == '\n') lineCount++;
+    }
+    float res = (textAscent()+textDescent()) * lineCount + 2 * padding;
     popStyle();
     return res;
   }
@@ -146,6 +150,12 @@ class Button extends Widget {
     this.name = name;
   }
   
+  Button(Widget parent, String name, float size) {
+    super(parent);
+    this.name = name;
+    sizeX = size;
+  }
+  
   boolean mouseHover() {
     return false;
   }
@@ -180,6 +190,11 @@ class RectButton extends Button {
   RectButton ( Widget parent, String name, float x, float y, float sx, float sy ) {
     super ( parent, name, x, y, sx );
     sizeY = sy;
+  }
+  
+  RectButton(Widget parent, String name, float sizeX, float sizeY) {
+    super(parent, name, sizeX);
+    this.sizeY = sizeY;
   }
 
   @Override

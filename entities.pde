@@ -7,22 +7,21 @@ class Entity extends Widget {
   
   ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
 
-  Button icon;
+  private Button icon;
   
   private Widget menu, info;
+  
+  private boolean hasInit = false;
 
   String name;
   int x, y; // current position on the field
-  boolean isSelected = false;
+  // private boolean isSelected = false;
   private Button closeMenuButton;
 
-  Entity (JSONObject unitsConfig, String name, HexCoor coor) {
-    super(field, field.hexToCoor(coor));
+  Entity (JSONObject unitsConfig, String name) {
+    super(field);
     // Pos config
     this.name = name;
-    x = coor.x;
-    y = coor.y;
-    field.hexes[x][y].entities.add(this);
 
     println();
     println("Configuring entity " + toString());
@@ -54,7 +53,7 @@ class Entity extends Widget {
     icon.callback = new ButtonCallback() {
       @Override
       public void callback(Button b) {
-        ((Entity)b.parent).isSelected = true;
+        ((Entity)b.parent).select();
       }
     };
     addChild(icon);
@@ -67,7 +66,12 @@ class Entity extends Widget {
     fill = color ( 255, 255, 0 );
   }
   
-  void init() {
+  void init(HexCoor hexCoor) {
+    hasInit = true;
+    x = hexCoor.x;
+    y = hexCoor.y;
+    coor = new PVector(field.hexToCoor(hexCoor).x, field.hexToCoor(hexCoor).y);
+    field.hexes[x][y].entities.add(this);
     field.addChild(this);
     for ( Behaviour b : behaviours ) {
       b.init();
@@ -111,8 +115,16 @@ class Entity extends Widget {
     menu.pack(behavioursList);
     
     for ( Behaviour b : behaviours ) {
-      menu.pack(b.getMenuWidget());
-      info.pack(b.getInfoWidget());
+      Widget mWidget = b.getMenuWidget();
+      if (mWidget != null) {
+        mWidget.parent = menu;
+        menu.pack(b.getMenuWidget());
+      }
+      Widget iWidget = b.getInfoWidget();
+      if (iWidget != null) {
+        iWidget.parent = info;
+        info.pack(b.getInfoWidget());
+      }
     }
     closeMenuButton = new RectButton(menu, "X", 
       200, 0, 100, menuNameLabel.getHeight());
@@ -120,13 +132,14 @@ class Entity extends Widget {
   }
   
   void update() {
+    if (!hasInit) return;
     for ( int i = 0; i < behaviours.size(); i++ ) {
       behaviours.get(i).update();
     }
     
-    if ( isSelected ) {
+    if ( this == selectedEntity ) {
       if(closeMenuButton.isReleased()) {
-        isSelected = false;
+        deselect();
       }
       displayMenu();
     } else {
@@ -138,9 +151,18 @@ class Entity extends Widget {
       hideInfo();
     }
   }
+  
+  void select() {
+    selectedEntity = this;
+  }
+  
+  void deselect() {
+    selectedEntity = null;
+  }
 
   void nextTurn() {
-    isSelected = false;
+    if(!hasInit) return;
+    deselect();
     food -= foodUsing;
     for ( Behaviour b : behaviours ) {
       b.nextTurn();
@@ -174,6 +196,7 @@ class Entity extends Widget {
   }
 
   void draw() {
+    if(!hasInit) return;
     fill(0, 255, 100);
     PVector coords = field.hexToCoor(new HexCoor(x, y));
     ellipse(coords.x + HEX_SIDE_SIZE, coords.y, HEX_SIDE_SIZE, HEX_SIDE_SIZE);

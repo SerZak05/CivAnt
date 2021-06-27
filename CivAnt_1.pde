@@ -15,6 +15,9 @@ final float HEX_SIDE_SIZE = 50;
 Field field;
 
 ArrayList<Entity> entities;
+Entity selectedEntity = null;
+
+JSONObject unitsConfig;
 
 float food = 100, income = 0; // overall food supply
 
@@ -88,11 +91,15 @@ void setup() {
   println(gen.seed);
   gameWidget.addChild(field);
 
+  unitsConfig = loadJSONObject("assets/units.json");
   entities = new ArrayList<Entity>();
-  JSONObject unitsConfig = loadJSONObject("assets/units.json");
-  Entity e = new Entity(unitsConfig, "Recon", new HexCoor(0, 0));
-  e.init();
+  Entity e = new Entity(unitsConfig, "Recon");
+  e.init(new HexCoor(0, 0));
   entities.add(e);
+  
+  Entity nest = new Entity(unitsConfig, "Nest");
+  nest.init(new HexCoor(2, 2));
+  entities.add(nest);
   
   /* //entities.add ( new Movable ( "Long name of an ant", 4, 3, 4, 0 ) );
    entities.add ( new Nest( new EntityBuilder( "Nest", 2, 5 )
@@ -129,44 +136,6 @@ void keyPressed () {
 void keyReleased() {
   camera.keyReleased();
 }
-
-void mousePressed() {
-  if ( mode == modeType.game ) {
-    if ( mouseButton == LEFT ) {
-      //boolean isSelected = false; // checks, if something is selected
-      for ( int i = 0; i < entities.size(); i++ ) {
-        Entity en = entities.get(i);
-
-        if ( en.icon == null || en.player != PLAYER_NUM ) continue;
-        //pushMatrix();
-        //translate ( field.hexes[en.x][en.y].center.x, field.hexes[en.x][en.y].center.y );
-        if ( en.icon.isPressed()) {
-          selectEntity ( i );
-        }
-        //println ( mouseX, mouseY );
-        //popMatrix();
-      }
-
-      //if ( targetHex != null && !targetHex.entities.isEmpty()) {
-      //  // select an entity by LMB
-      //  targetHex.entities.get(0).isSelected = targetHex.entities.get(0).canBeSelected;
-      //}
-    }
-  }
-}
-
-void selectEntity( int i ) {
-  for ( int j = 0; j < entities.size(); j++ ) {
-    if ( j == i ) {
-      Entity en = entities.get(i); 
-      en.isSelected = true;
-      //camPos = PVector.sub( new PVector ( 3*width/8-HEX_SIDE_SIZE, height/2 ), field.hexes[en.x][en.y].center );
-    } else {
-      entities.get(j).isSelected = false;
-    }
-  }
-}
-
 
 void draw() {
   background(0);

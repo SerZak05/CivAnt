@@ -18,7 +18,7 @@
 		"behaviours": [
 			{
 				"type": "Builder",
-				"buildings": [
+				"builds": [
 					"Gathering route"
 				]
 			},
@@ -36,7 +36,7 @@
 		"behaviours": [
 			{
 				"type": "Builder",
-				"buildings": [
+				"builds": [
 					"Nest"
 				]
 			},
@@ -44,6 +44,18 @@
 				"type": "Movable",
 				"speed": 3,
 				"size": 2
+			}
+		]
+	},
+	"Nest": {
+		"foodCost": 0,
+		"foodConsumption": 3,
+		"behaviours": [
+			{
+				"type": "Builder",
+				"builds": [
+					"Recon"
+				]
 			}
 		]
 	}

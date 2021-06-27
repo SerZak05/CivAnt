@@ -7,7 +7,12 @@ Behaviour buildBehaviour(Entity e, JSONObject config) {
   switch(type) {
     case "Movable":
       res = new Movable(e, config);
-    break;
+      break;
+    case "Builder":
+      res = new Builder(e, config);
+      break;
+    default:
+      println("Unknown behaviour found: " + type);
   }
   return res;
 }
