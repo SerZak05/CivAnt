@@ -3,7 +3,6 @@ class Entity extends Widget {
   private int turnsToMake, foodToMake, foodUsing;
   private int size = 0;
   private int player = 0; // player number
-  private color fill;
   
   ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
 
@@ -17,6 +16,8 @@ class Entity extends Widget {
   int x, y; // current position on the field
   // private boolean isSelected = false;
   private Button closeMenuButton;
+  
+  private PImage mImage;
 
   Entity (JSONObject unitsConfig, String name) {
     super(field);
@@ -45,6 +46,21 @@ class Entity extends Widget {
       behaviours.add(beh);
     }
     
+    // Configuring image
+    PImage mask = null;
+    try {
+      mImage = loadImage(config.getString("picture"));
+      mask = loadImage(config.getString("mask"));
+    } catch (Exception e) {
+      println("No picture/mask specified for " + name);
+    }
+    if(mImage != null && mask != null) {
+      mImage.mask(mask);
+    }
+    int newHeight = round(mImage.height * HEX_SIDE_SIZE / mImage.width);
+    mImage.resize(round(HEX_SIDE_SIZE), newHeight);
+    
+    // Configuring icon
     icon = new RectButton ( this, name, 
       HEX_SIDE_SIZE/2, 
       - 3*HEX_SIDE_SIZE/4,
@@ -64,9 +80,10 @@ class Entity extends Widget {
     menu = new Widget(null, new PVector(width - 300, 0));
     
     updateMenuInfo();
-    fill = color ( 255, 255, 0 );
   }
   
+  // init is used when the entity is placed on the field.
+  // After init Entity starts to update and draw.
   void init(HexCoor hexCoor) {
     hasInit = true;
     x = hexCoor.x;
@@ -198,9 +215,14 @@ class Entity extends Widget {
 
   void draw() {
     if(!hasInit) return;
-    fill(0, 255, 100);
     PVector coords = field.hexToCoor(new HexCoor(x, y));
-    ellipse(coords.x + HEX_SIDE_SIZE, coords.y, HEX_SIDE_SIZE, HEX_SIDE_SIZE);
+    if(mImage == null) {
+      fill(0, 255, 100);
+      ellipse(coords.x + HEX_SIDE_SIZE, coords.y, HEX_SIDE_SIZE, HEX_SIDE_SIZE);
+    } else {
+      imageMode(CENTER);
+      image(mImage, coords.x + HEX_SIDE_SIZE, coords.y);
+    }
   }
 }
 
