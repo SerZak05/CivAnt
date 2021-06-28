@@ -1,4 +1,4 @@
-class Camera {
+final class Camera {
   private PVector camPos = new PVector(0, 0);
   private boolean movingUp = false;
   private boolean movingLeft = false;

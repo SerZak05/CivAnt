@@ -75,18 +75,10 @@ class Field extends Widget {
         hexes[i][j] = new Hex( coor, 2 );
         coor.y += HEX_SIDE_SIZE/2;
         coor.x += 3*HEX_SIDE_SIZE/2;
-        hexes[i][j].space = 0;
       }
       coor.y -= h*HEX_SIDE_SIZE/2 + HEX_SIDE_SIZE/2;
       coor.x -= 3*h*HEX_SIDE_SIZE/2 - 3*HEX_SIDE_SIZE/2;
     }
-    //hexes[5][5].capacity = 0;
-    //hexes[5][4].capacity = 0;
-    //hexes[5][3].capacity = 0;
-    //hexes[4][3].capacity = 0;
-    //hexes[3][3].resource = ResourceType.Flower;
-    //hexes[2][2].resource = ResourceType.Grass;
-    //hexes[3][2].resource = ResourceType.Grass;
 
     // setting the shape
     Hex hex = new Hex(new PVector(), 0);
@@ -103,7 +95,7 @@ class Field extends Widget {
     textures[2] = grassShape;
   }
 
-  void updateSpace() {
+  /*void updateSpace() {
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
         Hex hex = hexes[i][j]; 
@@ -117,9 +109,18 @@ class Field extends Widget {
         }
       }
     }
+  }*/
+  
+  // checks if the hexCoor is valid coor and not outside the field
+  boolean isHexInside(HexCoor hexCoor) {
+    return hexCoor.x >= 0 &&
+      hexCoor.x < w &&
+      hexCoor.y >= 0 &&
+      hexCoor.y < h;
   }
   
   Hex getHex(HexCoor hexCoor) {
+    if(!isHexInside(hexCoor)) return null;
     return hexes[hexCoor.x][hexCoor.y];
   }
 

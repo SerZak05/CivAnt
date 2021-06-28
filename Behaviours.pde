@@ -15,10 +15,10 @@ abstract class Behaviour {
   }
   
   // returns link to our widget, so it can be displayed and we can interact with Behaviour
-  Widget getInfoWidget() {    
+  final Widget getInfoWidget() {    
     return infoWidget;
   }
-  Widget getMenuWidget() {
+  final Widget getMenuWidget() {
     return menuWidget;
   }
   
@@ -26,7 +26,7 @@ abstract class Behaviour {
   abstract void init();
   abstract void update();
   
-  String getName() {
+  final String getName() {
     return name;
   }
 }
@@ -70,9 +70,9 @@ class Movable extends Behaviour {
   // Updates the field so it doesnt update when every object is constructed
   @Override
   void init() {
-    field.updateSpace();
+    // field.updateSpace();
     field.hexes[mEntity.x][mEntity.y].space = field.hexes[mEntity.x][mEntity.y].capacity - size;
-    updateVisibility();
+    // updateVisibility();
   } 
 
   private boolean pmousePressed = false;
@@ -88,7 +88,7 @@ class Movable extends Behaviour {
         if ( target != null ) {
           field.hexes[mEntity.x][mEntity.y].space += size;
           move ( target.x, target.y );
-          field.hexes[mEntity.x][mEntity.y].space = field.hexes[mEntity.x][mEntity.y].capacity - size;
+          field.hexes[mEntity.x][mEntity.y].space -= size;
         }
       }
     }
@@ -129,7 +129,6 @@ class Movable extends Behaviour {
       }
     }*/
     field.hexes[x][y].entities.add( mEntity );
-    //field.hexes[x][y].space -= size;
   }
 
   /*void joinSquad( Squad s ) {
@@ -146,7 +145,7 @@ class Movable extends Behaviour {
   void updateVisibility() {
     field.hexes[mEntity.x][mEntity.y].isOpened = true;
     for ( HexCoor neigh : field.getNeigh( mEntity.x, mEntity.y ) ) {
-      if ( neigh.x < 0 || neigh.x >= field.w || neigh.y < 0 || neigh.y >= field.h ) continue;
+      if ( !field.isHexInside(new HexCoor(neigh.x, neigh.y)) ) continue;
       field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
       field.hexes[(int)neigh.x][(int)neigh.y].space = field.hexes[(int)neigh.x][(int)neigh.y].capacity;
     }
@@ -194,10 +193,20 @@ class Builder extends Behaviour {
         return res;
       }
     };
+    
+    final Builder self = this; 
+    
     for ( String str : availableBuilds ) {
-      Button b = new RectButton(projectsButtons, str, 300, 75);
+      final Button b = new RectButton(projectsButtons, str, 300, 75);
       b.pressedColor = color(200, 0, 0);
       b.releasedColor = color(255, 0, 0);
+      
+      b.callback = new Callback() {
+        @Override
+        void callback() {
+          self.selectProject(b.label.text);
+        }
+      };
       projectsButtons.pack(b);
     }
     menuWidget.pack(projectsButtons);
@@ -234,12 +243,12 @@ class Builder extends Behaviour {
   
   @Override
   void update() {
-    for ( Widget w : projectsButtons.children ) {
+    /*for ( Widget w : projectsButtons.children ) {
       Button b = (Button)w;
       if (b.isReleased()) {
         selectProject(b.label.text);
       }
-    }
+    }*/
   }
   
   private void build() {

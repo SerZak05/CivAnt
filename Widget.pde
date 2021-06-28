@@ -13,7 +13,7 @@ class Widget {
     coor = new PVector();
   }
 
-  PVector getGlobalCoords() {
+  final PVector getGlobalCoords() {
     if (parent == null) { //this Widget is a root
       return coor;
     }
@@ -31,13 +31,13 @@ class Widget {
   void update() {
   }
 
-  void addChild(Widget newChild) {
+  final void addChild(Widget newChild) {
     if(newChild == null) return;
     println("Adding child: " + newChild.toString());
     children.add(newChild);
   }
 
-  void removeChild(Widget child) {
+  final void removeChild(Widget child) {
     println("Removing child: " + child.toString());
     children.remove(child);
   }
@@ -45,7 +45,7 @@ class Widget {
   void draw() {
   }
 
-  void drawChildren() {
+  final void drawChildren() {
     for (Widget child : children) {
       pushMatrix();
       translate(coor.x, coor.y);
@@ -134,8 +134,8 @@ class Label extends Widget {
   }
 }
 
-interface ButtonCallback {
-  void callback(Button b);
+interface Callback {
+  void callback();
 }
 
 // just a button
@@ -145,7 +145,7 @@ class Button extends Widget {
 
   color pressedColor = color(200, 0, 0), releasedColor = color(255, 0, 0);
 
-  ButtonCallback callback = null;
+  Callback callback = null;
 
   Button ( Widget parent, String name, float x, float y, float sx ) {
     super(parent, new PVector(x, y));
@@ -190,7 +190,7 @@ class Button extends Widget {
   @Override
     void update() {
     if (isReleased() && callback != null) {
-      callback.callback(this);
+      callback.callback();
     }
     pmouseHover = mouseHover();
     pmousePressed = isPressed();

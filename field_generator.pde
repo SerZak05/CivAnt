@@ -114,6 +114,13 @@ class FieldGenerator {
         result.hexes[h.x][h.y].capacity = 0;
       }
     }
+    
+    /// initializing space ///
+    for ( int i = 0; i < result.w; i++ ) {
+      for ( int j = 0; j < result.h; j++ ) {
+        result.hexes[i][j].space = result.hexes[i][j].capacity; 
+      }
+    }
     return result;
   }
 

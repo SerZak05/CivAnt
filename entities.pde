@@ -61,15 +61,16 @@ class Entity extends Widget {
     mImage.resize(round(HEX_SIDE_SIZE), newHeight);
     
     // Configuring icon
+    final Entity self = this;
     icon = new RectButton ( this, name, 
       HEX_SIDE_SIZE/2, 
       - 3*HEX_SIDE_SIZE/4,
       HEX_SIDE_SIZE,
       25);
-    icon.callback = new ButtonCallback() {
+    icon.callback = new Callback() {
       @Override
-      public void callback(Button b) {
-        ((Entity)b.parent).select();
+      public void callback() {
+        self.select();
       }
     };
     icon.label.padding = 0;
@@ -108,6 +109,8 @@ class Entity extends Widget {
   }*/
   // updates menu and info widgets with all behaviours' widgets
   void updateMenuInfo() {
+    final Entity self = this;
+
     menu.children.clear();
     info.children.clear();
     Label infoNameLabel = new Label(info);
@@ -146,6 +149,12 @@ class Entity extends Widget {
     }
     closeMenuButton = new RectButton(menu, "X", 
       200, 0, 100, menuNameLabel.getHeight());
+    closeMenuButton.callback = new Callback() {
+      @Override
+      public void callback() {
+        self.deselect();
+      }
+    };
     menu.addChild(closeMenuButton);
   }
   
@@ -156,9 +165,6 @@ class Entity extends Widget {
     }
     
     if ( this == selectedEntity ) {
-      if(closeMenuButton.isReleased()) {
-        deselect();
-      }
       displayMenu();
     } else {
       hideMenu();

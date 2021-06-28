@@ -1,4 +1,4 @@
-enum modeType { //<>// //<>//
+enum modeType { //<>//
   menu, game, help;
 }
 
@@ -38,9 +38,9 @@ void setup() {
     RectButton b = new RectButton( mainMenuWidget, "Play", 
       0, 0, 
       textWidth("Play"), textAscent()+textDescent() );
-    b.callback = new ButtonCallback() {
+    b.callback = new Callback() {
       @Override
-        public void callback(Button b) {
+        public void callback() {
         mode = modeType.game;
       }
     };
@@ -50,9 +50,9 @@ void setup() {
     RectButton b = new RectButton( mainMenuWidget, "Help", 
       0, 0, 
       textWidth("Help"), textAscent()+textDescent() );
-    b.callback = new ButtonCallback() {
+    b.callback = new Callback() {
       @Override
-        public void callback(Button b) {
+        public void callback() {
         mode = modeType.help;
       }
     };
@@ -62,9 +62,9 @@ void setup() {
     RectButton b = new RectButton( mainMenuWidget, "Quit", 
       0, 0, 
       textWidth("Quit"), textAscent()+textDescent() );
-    b.callback = new ButtonCallback() {
+    b.callback = new Callback() {
       @Override
-        public void callback(Button b) {
+        public void callback() {
         exit();
       }
     };
@@ -72,9 +72,9 @@ void setup() {
   }
 
   CircButton backToMenuButton = new CircButton(gameWidget, "Back to menu", 15, 15, 100);
-  backToMenuButton.callback = new ButtonCallback() {
+  backToMenuButton.callback = new Callback() {
     @Override
-      public void callback(Button b) {
+      public void callback() {
       mode = modeType.menu;
     }
   };
