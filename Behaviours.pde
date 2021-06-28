@@ -195,15 +195,7 @@ class Builder extends Behaviour {
       }
     };
     for ( String str : availableBuilds ) {
-      Button b = new RectButton(projectsButtons, str, 300, 75) {
-        @Override
-        boolean isReleased() {
-          boolean res = super.isReleased();
-          //if (res) println("Released");
-          println(getGlobalCoords());
-          return res;
-        }
-      };
+      Button b = new RectButton(projectsButtons, str, 300, 75);
       b.pressedColor = color(200, 0, 0);
       b.releasedColor = color(255, 0, 0);
       projectsButtons.pack(b);
@@ -245,7 +237,7 @@ class Builder extends Behaviour {
     for ( Widget w : projectsButtons.children ) {
       Button b = (Button)w;
       if (b.isReleased()) {
-        selectProject(b.name);
+        selectProject(b.label.text);
       }
     }
   }

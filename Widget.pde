@@ -81,6 +81,7 @@ class Label extends Widget {
   private String text;
   int textSize, textAlignment;
   color fill, background;
+  boolean noBackground = false;
   float padding = 10;
   Label(Widget parent, PVector coor) {
     super(parent, coor);
@@ -122,9 +123,11 @@ class Label extends Widget {
     pushStyle();
     textAlign(textAlignment);
     textSize(textSize);
-    fill(background);
-    rectMode(CORNER);
-    rect(coor.x, coor.y, getWidth(), getHeight());
+    if(!noBackground) {
+      fill(background);
+      rectMode(CORNER);
+      rect(coor.x, coor.y, getWidth(), getHeight());
+    }
     fill(fill);
     text(text, coor.x + padding, coor.y + padding + textAscent());
     popStyle();
@@ -138,7 +141,7 @@ interface ButtonCallback {
 // just a button
 class Button extends Widget {
   float sizeX;
-  String name;
+  Label label;
 
   color pressedColor = color(200, 0, 0), releasedColor = color(255, 0, 0);
 
@@ -147,13 +150,22 @@ class Button extends Widget {
   Button ( Widget parent, String name, float x, float y, float sx ) {
     super(parent, new PVector(x, y));
     sizeX = sx;
-    this.name = name;
+    initLabel(name);
   }
   
   Button(Widget parent, String name, float size) {
     super(parent);
-    this.name = name;
     sizeX = size;
+    initLabel(name);
+  }
+  
+  private void initLabel(String text) {
+    label = new Label(this, new PVector(0, 0));
+    label.text = text;
+    label.noBackground = true;
+    label.fill = 255;
+    label.textSize = 20;
+    addChild(label);
   }
   
   boolean mouseHover() {
@@ -217,8 +229,6 @@ class RectButton extends Button {
       fill(releasedColor);
     }
     rect ( coor.x, coor.y, sizeX, sizeY );
-    fill(255);
-    text ( name, coor.x, coor.y );
     popStyle();
   }
   
@@ -296,7 +306,5 @@ class CustomButton extends Button {
       button.draw();
       popStyle();
     }
-    fill ( 255 );
-    text ( name, coor.x, coor.y );
   }
 }

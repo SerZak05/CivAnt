@@ -56,6 +56,7 @@ class Entity extends Widget {
         ((Entity)b.parent).select();
       }
     };
+    icon.label.padding = 0;
     addChild(icon);
     
     // Configuring menu and info widgets
