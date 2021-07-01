@@ -20,7 +20,6 @@ class Entity extends Widget {
 
   Entity (JSONObject unitsConfig, String name) {
     super(field);
-    // Pos config
     this.name = name;
 
     println();
@@ -74,6 +73,11 @@ class Entity extends Widget {
     };
     icon.label.padding = 0;
     addChild(icon);
+    
+    // Setting up z coords (for drawing)
+    z = new Float(defaultEntityZ);
+    icon.z = new Float(z - 0.5);
+    icon.label.z = new Float(z - 0.5);
     
     // Configuring menu and info widgets
     info = new Widget(null, new PVector(0, 300));

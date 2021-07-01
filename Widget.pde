@@ -3,6 +3,10 @@ void setZ(float z) {
   defaultZ = z;
 }
 
+final Float defaultUIZ = new Float(0);
+final Float defaultEntityZ = new Float(1);
+final Float defaultFieldZ = new Float(2);
+
 class Widget {
   protected ArrayList<Widget> children = new ArrayList<Widget>();
   protected Widget parent;
@@ -12,7 +16,10 @@ class Widget {
 
   Widget(Widget parent, PVector coor) {
     this.parent = parent;
-    z = new Float(defaultZ);
+    if (defaultZ != null) 
+      z = new Float(defaultZ);
+    else
+      z = defaultUIZ; // Every widget has its own default
     this.coor = new PVector(coor.x, coor.y);
   }
   

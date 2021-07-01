@@ -61,8 +61,6 @@ void changeScene(ModeType newMode) {
 
   case game: // Main game scene
     CircButton backToMenuButton = new CircButton(res, "Back to menu", 15, 15, 100);
-    backToMenuButton.z = new Float(-1);
-    backToMenuButton.label.z = new Float(-2);
     backToMenuButton.callback = new Callback() {
       @Override
         public void callback() {

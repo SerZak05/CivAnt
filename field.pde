@@ -64,6 +64,7 @@ class Field extends Widget {
   /// Constructor ///
   Field ( Widget parent, int w_, int h_ ) {
     super(parent, new PVector());
+    z = new Float(defaultFieldZ);
     w = w_;
     h = h_;
     hexes = new Hex[w][h];
