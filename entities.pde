@@ -1,92 +1,238 @@
-///Builder///
-class EntityBuilder {
-  String name;
-  HexCoor coor;
-  //////
-  boolean canBeSelected = true;
-  int turnsToDo = 0;
-  int foodToDo = 0;
-  int foodUsing = 0;
-  int player = 0; // PLAYER_NUM - our player
-  EntityBuilder ( String name, int x, int y ) {
-    this.name = name;
-    coor = new HexCoor( x, y );
-  }
-  EntityBuilder setCbs ( boolean cbs ) {
-    canBeSelected = cbs;
-    return this;
-  }
-  EntityBuilder setTtd ( int ttd ) {
-    turnsToDo = ttd;
-    return this;
-  }
-  EntityBuilder setFtd ( int ftd ) {
-    foodToDo = ftd;
-    return this;
-  }
-  EntityBuilder setFus ( int fus ) {
-    foodUsing = fus;
-    return this;
-  }
-  EntityBuilder setPlayer ( int pl ) {
-    player = pl;
-    return this;
-  }
-  Entity build() {
-    return new Entity ( this );
-  }
-}
-
-
-class Entity {
+class Entity extends Widget {
   //boolean canBeSelected;
-  int turnsToDo, foodToDo, foodUsing;
-  int size = 0;
-  int player = 0; // player number
+  private int turnsToMake, foodToMake, foodUsing;
+  private int player = 0; // player number
+  
+  ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
 
-  CustomButton icon;
+  private Button icon;
+  
+  private Widget menu, info;
+  
+  private boolean hasInit = false;
 
   String name;
   int x, y; // current position on the field
-  boolean isSelected = false;
-  Entity ( EntityBuilder builder ) {
-    name = builder.name;
-    x = builder.coor.x;
-    y = builder.coor.y;
-    field.hexes[x][y].entities.add(this);
-    //canBeSelected = builder.canBeSelected;
+  // private boolean isSelected = false;
+  private Button closeMenuButton;
+  
+  private PImage mImage;
 
-    turnsToDo = builder.turnsToDo;
-    foodToDo = builder.foodToDo;
-    foodUsing = builder.foodUsing;
+  Entity (JSONObject unitsConfig, String name) {
+    super(field);
+    // Pos config
+    this.name = name;
+
+    println();
+    println("Configuring entity " + toString());
+    JSONObject config = unitsConfig.getJSONObject(name);
+    //Food config
+    turnsToMake = config.getInt("turnsToMake", 0);
+    foodToMake = config.getInt("foodToCost", 0);
+    foodUsing = config.getInt("foodConsumption", 0);
+    println("Turns to make: " + turnsToMake);
+    println("Food to make: " + foodToMake);
+    println("Food using: " + foodUsing);
+    
+    // Behaviours config
+    JSONArray behavioursConfig = config.getJSONArray("behaviours");
+    println(behavioursConfig);
+    
+    for ( int i = 0; i < behavioursConfig.size(); i++ ) {
+      JSONObject behConfig = behavioursConfig.getJSONObject(i);
+      // typeName -> Class
+      Behaviour beh = buildBehaviour(this, behConfig);
+      behaviours.add(beh);
+    }
+    
+    // Configuring image
+    PImage mask = null;
+    try {
+      mImage = loadImage(config.getString("picture"));
+      mask = loadImage(config.getString("mask"));
+    } catch (Exception e) {
+      println("No picture/mask specified for " + name);
+    }
+    if(mImage != null && mask != null) {
+      mImage.mask(mask);
+    }
+    int newHeight = round(mImage.height * HEX_SIDE_SIZE / mImage.width);
+    mImage.resize(round(HEX_SIDE_SIZE), newHeight);
+    
+    // Configuring icon
+    final Entity self = this;
+    icon = new RectButton ( this, name, 
+      HEX_SIDE_SIZE/2, 
+      - 3*HEX_SIDE_SIZE/4,
+      HEX_SIDE_SIZE,
+      25);
+    icon.callback = new Callback() {
+      @Override
+      public void callback() {
+        self.select();
+      }
+    };
+    icon.label.padding = 0;
+    addChild(icon);
+    
+    // Configuring menu and info widgets
+    info = new Widget(null, new PVector(0, 300));
+    menu = new Widget(null, new PVector(width - 300, 0));
+    
+    updateMenuInfo();
+  }
+  
+  // init is used when the entity is placed on the field.
+  // After init Entity starts to update and draw.
+  void init(HexCoor hexCoor) {
+    hasInit = true;
+    x = hexCoor.x;
+    y = hexCoor.y;
+    coor = new PVector(field.hexToCoor(hexCoor).x, field.hexToCoor(hexCoor).y);
+    for ( Behaviour b : behaviours ) {
+      b.init();
+    }
+    drawer.addWidget(this);
   }
 
-  Entity clone() {
+  /*Entity clone() {
     Entity clone = new EntityBuilder( name, x, y )
       //.setCbs(canBeSelected)
-      .setFtd(foodToDo)
-      .setTtd(turnsToDo)
+      .setFtd(foodToMake)
+      .setTtd(turnsToMake)
       .setFus(foodUsing)
       .setPlayer(player)
       .build();
     return clone;
+  }*/
+  // updates menu and info widgets with all behaviours' widgets
+  void updateMenuInfo() {
+    final Entity self = this;
+
+    menu.children.clear();
+    info.children.clear();
+    Label infoNameLabel = new Label(info);
+    infoNameLabel.text = name;
+    infoNameLabel.fill = 0;
+    infoNameLabel.background = color(200, 170, 0);
+    infoNameLabel.textSize = 40;
+    info.pack(infoNameLabel);
+    Label menuNameLabel = new Label(menu);
+    menuNameLabel.text = name;
+    menuNameLabel.fill = 0;
+    menuNameLabel.background = color(200, 170, 0);
+    menuNameLabel.textSize = 50;
+    menu.pack(menuNameLabel);
+    
+    Label behavioursList = new Label(menu);
+    for ( Behaviour b : behaviours ) {
+      behavioursList.text += b.getName() + ' ';
+    }
+    behavioursList.fill = 0;
+    behavioursList.background = color(200, 170, 0);
+    behavioursList.textSize = 30;
+    menu.pack(behavioursList);
+    
+    for ( Behaviour b : behaviours ) {
+      Widget mWidget = b.getMenuWidget();
+      if (mWidget != null) {
+        mWidget.parent = menu;
+        menu.pack(b.getMenuWidget());
+      }
+      Widget iWidget = b.getInfoWidget();
+      if (iWidget != null) {
+        iWidget.parent = info;
+        info.pack(b.getInfoWidget());
+      }
+    }
+    closeMenuButton = new RectButton(menu, "X", 
+      200, 0, 100, menuNameLabel.getHeight());
+    closeMenuButton.callback = new Callback() {
+      @Override
+      public void callback() {
+        self.deselect();
+      }
+    };
+    menu.addChild(closeMenuButton);
   }
-  void updateMenu() {
-  }
+  
   void update() {
+    if (!hasInit) return;
+    for ( int i = 0; i < behaviours.size(); i++ ) {
+      behaviours.get(i).update();
+    }
+    
+    if ( this == selectedEntity ) {
+      displayMenu();
+    } else {
+      hideMenu();
+    }
+    if ( field.getTargetHex() != null && field.getTargetHex().x == x && field.getTargetHex().y == y ) {
+      displayInfo();
+    } else {
+      hideInfo();
+    }
+  }
+  
+  void select() {
+    selectedEntity = this;
+  }
+  
+  void deselect() {
+    selectedEntity = null;
   }
 
   void nextTurn() {
-    isSelected = false;
+    if(!hasInit) return;
+    deselect();
     food -= foodUsing;
+    for ( Behaviour b : behaviours ) {
+      b.nextTurn();
+    }
   }
-
-  void displayInfo() {
+  private boolean isShowingInfo = false;
+  private boolean isShowingMenu = false;
+  private void displayInfo() {
+    if(!isShowingInfo) {
+      isShowingInfo = true;
+      currScene.addChild(info);
+      drawer.addWidget(info);
+    }
   }
-  void displayMenu() {
+  private void hideInfo() {
+    if(isShowingInfo) {
+      isShowingInfo = false;
+      currScene.removeChild(info);
+      drawer.removeWidget(info);
+    }
+  }
+  private void displayMenu() {
+    if(!isShowingMenu) {
+      isShowingMenu = true;
+      currScene.addChild(menu);
+      drawer.addWidget(menu);
+    }
+  }
+  private void hideMenu() {
+    if(isShowingMenu) {
+      isShowingMenu = false;
+      currScene.removeChild(menu);
+      drawer.removeWidget(menu);
+    }
   }
 
   void draw() {
+    if(!hasInit) return;
+    pushMatrix();
+    transformMatrix();
+    if(mImage == null) {
+      fill(0, 255, 100);
+      ellipse(HEX_SIDE_SIZE, 0, HEX_SIDE_SIZE, HEX_SIDE_SIZE);
+    } else {
+      imageMode(CENTER);
+      image(mImage, HEX_SIDE_SIZE, 0);
+    }
+    popMatrix();
   }
 }
 
@@ -95,257 +241,10 @@ class Entity {
 ///
 ///MOVABLES///
 ///
-///Builder///
-class MovableBuilder extends EntityBuilder {
-  int speed, MP, size; 
-  MovableBuilder ( String name, int x, int y ) {
-    super ( name, x, y );
-  }
-  MovableBuilder setSpeed ( int speed ) {
-    this.speed = speed;
-    return this;
-  }
-  MovableBuilder setSize ( int size ) {
-    this.size = size;
-    return this;
-  }
-  MovableBuilder setMP ( int mp ) {
-    MP = mp;
-    return this;
-  }
-  Entity build() {
-    return new Movable(this);
-  }
-}
-
-class Movable extends Entity {
-  int speed, MP, size; //MP (move points) - current state
-  boolean isActive = true;
-  color fill;
-
-  Movable ( MovableBuilder builder ) {
-    super ( builder );
-    speed = builder.speed;
-    MP = builder.MP;
-    size = builder.size;
-
-    ArrayList<CircButton> buttons = new ArrayList();
-    CircButton circleButton = 
-      new CircButton ( "", 
-        field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, 
-        field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, 
-        HEX_SIDE_SIZE/3 );
-    circleButton.isFixed = false;
-    buttons.add(circleButton);
-    
-    icon = new CustomButton ( name, field.hexes[x][y].center.x + HEX_SIDE_SIZE/2, field.hexes[x][y].center.y - HEX_SIDE_SIZE/2, buttons );
-    icon.isFixed = false;
-    //addMouseListener( this );
-    fill = color ( 255, 255, 0 );
-
-    //println ( field.hexes[x][y].capacity - size );
-    field.updateSpace();
-    field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-    updateVisibility();
-  }
-
-
-  Movable clone() {
-    Movable clone = (Movable)new MovableBuilder( name, x, y )
-      .setSpeed(speed)
-      .setSize(size)
-      .setMP(MP)
-      //.setCbs(canBeSelected)
-      .setFtd(foodToDo)
-      .setTtd(turnsToDo)
-      .setFus(foodUsing)
-      .setPlayer(player)
-      .build();
-    //clone.MP = MP;
-    return clone;
-  }
-
-  void displayInfo() {
-    fill ( 255, 255, 0 );
-    rect ( 0, height, width/4, 3*height/4 );
-    fill ( 0 );
-    textSize( (textWidth(name)>width/4 ? 30 : 60) );
-    text ( name, 10, 3*height/4 + 10 );
-    float first_vert_sz = textAscent()+textDescent();
-    textSize ( 40 );
-    text ( "Speed: " + speed, 10, 3*height/4 + first_vert_sz );
-    float sec_vert_sz = textAscent()+textDescent();
-    text ( "Size: " + size, 10, 3*height/4 + first_vert_sz + sec_vert_sz );
-  }
-
-  private boolean pmousePressed = false;
-  void updateMenu() {
-    if ( pmousePressed && !mousePressed && player == PLAYER_NUM ) { // mouse released
-      if ( mouseButton == RIGHT ) {
-        HexCoor target = field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y );
-        if ( target != null ) {
-          field.hexes[x][y].space += size;
-          move ( target.x, target.y );
-          field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-        }
-      }
-    }
-    pmousePressed = mousePressed;
-  }
-
-  void displayMenu() {
-    fill ( 255, 100, 0 );
-    rect ( 3*width/4, 0, width, height );
-    fill ( 0 );
-    textSize( (textWidth(name)>width/4 ? 30 : 60) );
-    text ( name, 3*width/4+10, 10 );
-    float first_vert_sz = textAscent()+textDescent();
-    textSize( 40 );
-    text ( "MP: " + MP + " / " + speed, 3*width/4+10, 10+first_vert_sz );
-  }
-
-  void move( int tx, int ty ) {
-    ArrayList<HexCoor> path = field.path( x, y, tx, ty, size );
-    if ( path == null ) return;
-    if ( path.size() > MP ) return;
-    MP -= path.size();
-    field.hexes[x][y].entities.remove( this );
-    //field.hexes[x][y].space += size;
-    PVector diff = PVector.sub(field.hexes[tx][ty].center, field.hexes[x][y].center);
-    for ( Button b : icon.parts ) {
-      b.coor.add( diff );
-    }
-    icon.coor.add( diff );
-    x = tx;
-    y = ty;
-    updateVisibility();
-    //field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-
-    //joining squad//
-    for ( int i = 0; i < field.hexes[x][y].entities.size(); i++ ) {
-      Entity en = field.hexes[x][y].entities.get(i);
-      if ( en instanceof Squad ) {
-        if ( !((Squad)en).insects.contains(this) ) {
-          joinSquad ( (Squad)en );
-        }
-        return;
-      } 
-      if ( en instanceof Movable ) {
-        Squad sq = new Squad ( "Squad", x, y, true, new ArrayList<Movable>());
-        sq.isActive = false;
-        sq.MP = 0;
-        entities.add ( sq );
-        ((Movable) en).joinSquad( sq );
-        joinSquad( sq );
-      }
-    }
-    field.hexes[x][y].entities.add( this );
-    //field.hexes[x][y].space -= size;
-  }
-
-  void joinSquad( Squad s ) {
-    MP = 0;
-    isActive = false;
-    field.hexes[x][y].entities.remove(this);
-    s.insects.add ( this );
-    s.updateParams();
-    s.updateButtons();
-    field.updateSpace();
-    entities.remove ( this );
-  }
-
-  void updateVisibility() {
-    field.hexes[x][y].isOpened = true;
-    for ( HexCoor neigh : field.getNeigh( x, y ) ) {
-      if ( neigh.x < 0 || neigh.x >= field.w || neigh.y < 0 || neigh.y >= field.h ) continue;
-      field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
-      field.hexes[(int)neigh.x][(int)neigh.y].space = field.hexes[(int)neigh.x][(int)neigh.y].capacity;
-    }
-  }
-
-  void nextTurn() {
-    super.nextTurn();
-    MP = speed;
-    isActive = true;
-  }
-
-  void update() {
-    if ( MP <= 0 ) {
-      isActive = false;
-    }
-    if ( isSelected ) {
-      updateMenu();
-    }
-    super.update();
-  }
-
-  void draw() {
-    if ( isActive ) {
-      fill = color ( 255, 255, 0 );
-    } else {
-      fill = color ( 100, 100, 0 );
-    }
-    noStroke();
-    if ( isActive ) {
-      fill( 255 );
-    } else {
-      fill ( 100 );
-    }
-    if ( isSelected ) {
-      fill ( 255, 255, 0 );
-      if ( mousePressed && mouseButton == RIGHT && player == PLAYER_NUM ) {
-        stroke(255);
-        ArrayList<HexCoor> path = 
-          field.path( x, y, 
-            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).x, 
-            (int)field.coorsToHex( mouseX-camera.getCameraPos().x, mouseY-camera.getCameraPos().y ).y,
-            size );
-        if ( path != null ) {
-          path.add(0, new HexCoor ( x, y ));
-          if ( path.size() <= MP+1 ) {
-            field.drawPath ( path );
-          } else {
-            ArrayList<HexCoor> firstPath = new ArrayList();
-            ArrayList<HexCoor> secondPath = new ArrayList();
-            for ( int i = 0; i < path.size(); i++ ) {
-              if ( i <= MP ) {
-                firstPath.add(path.get(i));
-              } else {
-                secondPath.add(path.get(i));
-              }
-            }
-            field.drawPath(firstPath);
-            stroke(255, 0, 0);
-            secondPath.add(0, firstPath.get(firstPath.size()-1));
-            field.drawPath(secondPath);
-          }
-        }
-      }
-    }
-    noStroke();
-    fill ( fill );
-    ellipse( field.hexes[x][y].center.x + HEX_SIDE_SIZE, field.hexes[x][y].center.y, HEX_SIDE_SIZE-10, HEX_SIDE_SIZE-10 );
-    if ( icon.isPressed() && mouseButton == LEFT ) {
-      fill ( 0, 0, 255 );
-    } else {
-      if ( isActive ) {
-        fill ( 255, 0, 0 );
-      } else {
-        fill ( 100, 0, 0 );
-      }
-    }
-    textSize ( 20 );
-
-    //pushMatrix();
-    //translate( field.hexes[x][y].center.x, field.hexes[x][y].center.y );
-    icon.draw();
-    //popMatrix();
-  }
-}
 
 
 
-/// Workers ///
+/*/// Workers ///
 class Worker extends Movable {
   RectButton toBuild = new RectButton ( "Build", 3*width/4, height/4, width/4, height/8 );
   Worker ( MovableBuilder builder ) {
@@ -664,4 +563,4 @@ class Squad extends Movable {
       en.nextTurn();
     }
   }
-}
+}*/

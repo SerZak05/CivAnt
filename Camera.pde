@@ -1,23 +1,12 @@
-class Camera {
-  private PVector camPos = new PVector(0, 0);
+final class Camera {
   private boolean movingUp = false;
   private boolean movingLeft = false;
   private boolean movingRight = false;
   private boolean movingDown = false;
   private boolean scalingIn = false;
   private boolean scalingOut = false;
-  private float scaleFactor = 1;
   private float cameraSpeed = 15;
-  
-  
-  PVector getCameraPos() {
-    return new PVector(camPos.x, camPos.y);
-  }
-  
-  float getScaleFactor() {
-    return scaleFactor;
-  }
-  
+  private float scalingSpeed = 1.05;
 
   void keyPressed() {
     switch(key) {
@@ -72,25 +61,36 @@ class Camera {
   }
 
   void mouseDragged() {
-    if ( mode == modeType.game ) {
+    if ( mode == ModeType.game ) {
       if ( mouseButton == LEFT ) {
-        camPos.add( mouseX - pmouseX, mouseY - pmouseY );
+        field.coor.add( (mouseX - pmouseX) / field.getGlobalScale(), (mouseY - pmouseY) / field.getGlobalScale() );
       }
     }
+  }
+  
+  void mouseWheel(float cnt) {
+    if (cnt > 0) field.scale /= scalingSpeed;
+    if (cnt < 0) field.scale *= scalingSpeed;
   }
 
   void update() {
     if (movingUp) {
-      camPos.y += cameraSpeed;
+      field.coor.y += cameraSpeed;
     }
     if (movingLeft) {
-      camPos.x += cameraSpeed;
+      field.coor.x += cameraSpeed;
     }
     if (movingDown) {
-      camPos.y -= cameraSpeed;
+      field.coor.y -= cameraSpeed;
     }
     if (movingRight) {
-      camPos.x -= cameraSpeed;
+      field.coor.x -= cameraSpeed;
+    }
+    if (scalingIn) {
+      field.scale *= scalingSpeed;
+    }
+    if (scalingOut) {
+      field.scale /= scalingSpeed;
     }
   }
 }

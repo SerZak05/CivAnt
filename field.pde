@@ -17,7 +17,7 @@ class Hex {
     center = new PVector ( coor.x, coor.y );
     resource = r;
   }
-  
+
   PShape getShape() {
     PShape shape = createShape();
 
@@ -29,12 +29,12 @@ class Hex {
     shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
     shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
     shape.endShape(CLOSE);
-    
+
     return shape;
   }
-  
+
   PShape getShape(color fill, color stroke) {
-      PShape shape = createShape();
+    PShape shape = createShape();
 
     shape.beginShape();
     shape.vertex( 0, 0 );
@@ -43,16 +43,16 @@ class Hex {
     shape.vertex( 2*HEX_SIDE_SIZE, 0 );
     shape.vertex( 3*HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
     shape.vertex( HEX_SIDE_SIZE/2, HEX_SIDE_SIZE/2 );
-    
+
     shape.fill(fill);
     shape.stroke(stroke);
     shape.endShape(CLOSE);
-    
+
     return shape;
   }
 }
 
-class Field {
+class Field extends Widget {
   int w, h; // width and height of the field
   Hex[][] hexes; // array of the hexagons
 
@@ -62,7 +62,8 @@ class Field {
   //PShape grassShape; // grass texture ( for now )
 
   /// Constructor ///
-  Field ( int w_, int h_ ) {
+  Field ( Widget parent, int w_, int h_ ) {
+    super(parent, new PVector());
     w = w_;
     h = h_;
     hexes = new Hex[w][h];
@@ -74,18 +75,10 @@ class Field {
         hexes[i][j] = new Hex( coor, 2 );
         coor.y += HEX_SIDE_SIZE/2;
         coor.x += 3*HEX_SIDE_SIZE/2;
-        hexes[i][j].space = 0;
       }
       coor.y -= h*HEX_SIDE_SIZE/2 + HEX_SIDE_SIZE/2;
       coor.x -= 3*h*HEX_SIDE_SIZE/2 - 3*HEX_SIDE_SIZE/2;
     }
-    //hexes[5][5].capacity = 0;
-    //hexes[5][4].capacity = 0;
-    //hexes[5][3].capacity = 0;
-    //hexes[4][3].capacity = 0;
-    //hexes[3][3].resource = ResourceType.Flower;
-    //hexes[2][2].resource = ResourceType.Grass;
-    //hexes[3][2].resource = ResourceType.Grass;
 
     // setting the shape
     Hex hex = new Hex(new PVector(), 0);
@@ -102,7 +95,7 @@ class Field {
     textures[2] = grassShape;
   }
 
-  void updateSpace() {
+  /*void updateSpace() {
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
         Hex hex = hexes[i][j]; 
@@ -116,9 +109,22 @@ class Field {
         }
       }
     }
+  }*/
+  
+  // checks if the hexCoor is valid coor and not outside the field
+  boolean isHexInside(HexCoor hexCoor) {
+    return hexCoor.x >= 0 &&
+      hexCoor.x < w &&
+      hexCoor.y >= 0 &&
+      hexCoor.y < h;
+  }
+  
+  Hex getHex(HexCoor hexCoor) {
+    if(!isHexInside(hexCoor)) return null;
+    return hexes[hexCoor.x][hexCoor.y];
   }
 
-  /// checking if the coor-s are inside hex[i][j] ///
+  /// checking if the relative coor-s are inside hex[i][j] ///
   boolean isInside( int i, int j, float x, float y ) {
     //for (; i >= 0; i-- ) {
     //  shape.translate( HEX_SIDE_SIZE*2, 0 );
@@ -142,6 +148,11 @@ class Field {
     return result;
   }
 
+  HexCoor getTargetHex() {
+    PVector relCoords = globalToRelCoords(new PVector(mouseX, mouseY));
+    return coorsToHex(relCoords.x, relCoords.y);
+  }
+
   // just transforming regular coor-s into hex coor-s
   HexCoor coorsToHex ( float cx, float cy ) {
     for ( int i = 0; i < w; i++ ) {
@@ -149,7 +160,11 @@ class Field {
         if ( isInside( i, j, cx, cy ) ) return new HexCoor ( i, j );
       }
     }
-    return new HexCoor ( 0, 0 );
+    return null;
+  }
+
+  PVector hexToCoor(HexCoor hexCoor) {
+    return hexes[hexCoor.x][hexCoor.y].center;
   }
 
   // just a list of neighbours of hex[i][j]
@@ -260,9 +275,17 @@ class Field {
       ppv = pv;
     }
   }
+  
+  void addEntity(Entity e, HexCoor to) {
+    e.init(to);
+    hexes[to.x][to.y].entities.add(e);
+    addChild(e);
+  }
 
   /// drawing the field ///
   void draw() {
+    pushMatrix();
+    transformMatrix();
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
         //println ( "Hex[" + i + "][" + j + "] with space " + hexes[i][j].space );
@@ -328,6 +351,7 @@ class Field {
         text("Cap: " + hexes[i][j].capacity + " Sp: " + hexes[i][j].space, hexes[i][j].center.x, hexes[i][j].center.y );
       }
     }
+    popMatrix();
   }
 }
 
@@ -337,50 +361,50 @@ enum ResourceType {
 }
 
 
-class ResourceGatherer extends Entity {
-  HexCoor nest; // nearest nest`s coor
-  ResourceGatherer ( int x, int y ) {
-    super ( new EntityBuilder( "", x, y ) );
-    this.x = x;
-    this.y = y;
-  }
-
-  void update() {
-    super.update();
-    //nx = ny = -1;
-    int dist = (int)1e+10;
-    for ( Entity en : entities ) {
-      //println ( en.getClass().getSimpleName() );
-      if ( en instanceof Nest ) {
-        if ( nest == null ) {
-          nest = new HexCoor( en.x, en.y );
-          dist = nest.dist ( new HexCoor( x, y ) );
-          //println( "Nest == null", nest.x, nest.y, dist ); 
-          continue;
-        }
-        if ( new HexCoor( x, y ).dist ( new HexCoor(en.x, en.y) ) < dist ) {
-          //nx = en.x;
-          //ny = en.y;
-          nest = new HexCoor( en.x, en.y );
-          dist = nest.dist( new HexCoor( x, y ) );
-          //println( "Nest != null", en.x, en.y, "", nest.x, nest.y, dist );
-        }
-        //println ( "Gatherers coor:", x, y, "Nearest nest coor:", nest.x, nest.y, "Current nest coor:", en.x, en.y, dist );
-      }
-    }
-  }
-
-  void nextTurn() {
-    //food += field.hexes[x][y].resource.ordinal();
-    foodUsing = -field.hexes[x][y].resource.ordinal();
-    super.nextTurn();
-  }
-  void draw() {
-    stroke ( 0, 150, 0 );
-    fill ( 250, 250, 0 );
-    ellipse ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 10, 10 );
-    stroke ( 0, 255, 0 );
-    line ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 
-      field.hexes[nest.x][nest.y].center.x+HEX_SIDE_SIZE, field.hexes[nest.x][nest.y].center.y );
-  }
-}
+/*class ResourceGatherer extends Entity {
+ HexCoor nest; // nearest nest`s coor
+ ResourceGatherer ( int x, int y ) {
+ super ( new EntityBuilder( "", x, y ) );
+ this.x = x;
+ this.y = y;
+ }
+ 
+ void update() {
+ super.update();
+ //nx = ny = -1;
+ int dist = (int)1e+10;
+ for ( Entity en : entities ) {
+ //println ( en.getClass().getSimpleName() );
+ if ( en instanceof Nest ) {
+ if ( nest == null ) {
+ nest = new HexCoor( en.x, en.y );
+ dist = nest.dist ( new HexCoor( x, y ) );
+ //println( "Nest == null", nest.x, nest.y, dist ); 
+ continue;
+ }
+ if ( new HexCoor( x, y ).dist ( new HexCoor(en.x, en.y) ) < dist ) {
+ //nx = en.x;
+ //ny = en.y;
+ nest = new HexCoor( en.x, en.y );
+ dist = nest.dist( new HexCoor( x, y ) );
+ //println( "Nest != null", en.x, en.y, "", nest.x, nest.y, dist );
+ }
+ //println ( "Gatherers coor:", x, y, "Nearest nest coor:", nest.x, nest.y, "Current nest coor:", en.x, en.y, dist );
+ }
+ }
+ }
+ 
+ void nextTurn() {
+ //food += field.hexes[x][y].resource.ordinal();
+ foodUsing = -field.hexes[x][y].resource.ordinal();
+ super.nextTurn();
+ }
+ void draw() {
+ stroke ( 0, 150, 0 );
+ fill ( 250, 250, 0 );
+ ellipse ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 10, 10 );
+ stroke ( 0, 255, 0 );
+ line ( field.hexes[x][y].center.x+HEX_SIDE_SIZE, field.hexes[x][y].center.y, 
+ field.hexes[nest.x][nest.y].center.x+HEX_SIDE_SIZE, field.hexes[nest.x][nest.y].center.y );
+ }
+ }*/
