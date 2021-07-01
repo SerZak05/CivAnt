@@ -47,7 +47,8 @@ class Movable extends Behaviour {
     name = config.getString("type");
     
     // Config of widgets
-    infoWidget = new Widget(gameWidget);
+    setZ(-1); // UI level (in front of the field
+    infoWidget = new Widget(null);
     speedLabel = new Label(infoWidget, new PVector(0, 0));
     speedLabel.textAlignment = LEFT;
     speedLabel.textSize = 30;
@@ -64,6 +65,8 @@ class Movable extends Behaviour {
     infoWidget.pack(sizeLabel);
     
     menuWidget = null;
+    
+    setZ(0);
   }
   
   // Used, when placing entity on the field.
@@ -176,6 +179,7 @@ class Builder extends Behaviour {
     name = "Builder";
     
     // menu and info panels
+    setZ(-1); // UI level (in front of the field)
     menuWidget = new Widget(null);
     projectLabel = new Label(menuWidget);
     projectLabel.background = color(200, 170, 0);
@@ -219,6 +223,8 @@ class Builder extends Behaviour {
     menuWidget.pack(currBuilding);
     
     infoWidget = null;
+    
+    setZ(0);
   }
   @Override
   void init() {
@@ -253,8 +259,7 @@ class Builder extends Behaviour {
   
   private void build() {
     currProject.player = mEntity.player;
-    currProject.init(new HexCoor(mEntity.x, mEntity.y));
-    entities.add(currProject);
+    field.addEntity(currProject, new HexCoor(mEntity.x, mEntity.y));
     currProject = null;
     currTurn = 0;
   }

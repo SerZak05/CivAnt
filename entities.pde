@@ -1,7 +1,6 @@
 class Entity extends Widget {
   //boolean canBeSelected;
   private int turnsToMake, foodToMake, foodUsing;
-  private int size = 0;
   private int player = 0; // player number
   
   ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
@@ -90,11 +89,10 @@ class Entity extends Widget {
     x = hexCoor.x;
     y = hexCoor.y;
     coor = new PVector(field.hexToCoor(hexCoor).x, field.hexToCoor(hexCoor).y);
-    field.hexes[x][y].entities.add(this);
-    field.addChild(this);
     for ( Behaviour b : behaviours ) {
       b.init();
     }
+    drawer.addWidget(this);
   }
 
   /*Entity clone() {
@@ -119,14 +117,14 @@ class Entity extends Widget {
     infoNameLabel.background = color(200, 170, 0);
     infoNameLabel.textSize = 40;
     info.pack(infoNameLabel);
-    Label menuNameLabel = new Label(info);
+    Label menuNameLabel = new Label(menu);
     menuNameLabel.text = name;
     menuNameLabel.fill = 0;
     menuNameLabel.background = color(200, 170, 0);
     menuNameLabel.textSize = 50;
     menu.pack(menuNameLabel);
     
-    Label behavioursList = new Label(info);
+    Label behavioursList = new Label(menu);
     for ( Behaviour b : behaviours ) {
       behavioursList.text += b.getName() + ' ';
     }
@@ -198,37 +196,43 @@ class Entity extends Widget {
     if(!isShowingInfo) {
       isShowingInfo = true;
       currScene.addChild(info);
+      drawer.addWidget(info);
     }
   }
   private void hideInfo() {
     if(isShowingInfo) {
       isShowingInfo = false;
       currScene.removeChild(info);
+      drawer.removeWidget(info);
     }
   }
   private void displayMenu() {
     if(!isShowingMenu) {
       isShowingMenu = true;
       currScene.addChild(menu);
+      drawer.addWidget(menu);
     }
   }
   private void hideMenu() {
     if(isShowingMenu) {
       isShowingMenu = false;
       currScene.removeChild(menu);
+      drawer.removeWidget(menu);
     }
   }
 
   void draw() {
     if(!hasInit) return;
-    PVector coords = field.hexToCoor(new HexCoor(x, y));
+    pushMatrix();
+    transformMatrix();
     if(mImage == null) {
       fill(0, 255, 100);
-      ellipse(coords.x + HEX_SIDE_SIZE, coords.y, HEX_SIDE_SIZE, HEX_SIDE_SIZE);
+      ellipse(HEX_SIDE_SIZE, 0, HEX_SIDE_SIZE, HEX_SIDE_SIZE);
     } else {
       imageMode(CENTER);
-      image(mImage, coords.x + HEX_SIDE_SIZE, coords.y);
+      image(mImage, HEX_SIDE_SIZE, 0);
     }
+    popMatrix();
   }
 }
 

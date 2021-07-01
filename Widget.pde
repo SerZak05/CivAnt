@@ -1,15 +1,24 @@
+static Float defaultZ = new Float(0);
+void setZ(float z) {
+  defaultZ = z;
+}
+
 class Widget {
   protected ArrayList<Widget> children = new ArrayList<Widget>();
   protected Widget parent;
   PVector coor;
+  float scale = 1;
+  Float z;
 
   Widget(Widget parent, PVector coor) {
     this.parent = parent;
+    z = new Float(defaultZ);
     this.coor = new PVector(coor.x, coor.y);
   }
   
   Widget(Widget parent) {
     this.parent = parent;
+    z = new Float(defaultZ);
     coor = new PVector();
   }
 
@@ -17,7 +26,27 @@ class Widget {
     if (parent == null) { //this Widget is a root
       return coor;
     }
-    return PVector.add(coor, parent.getGlobalCoords());
+    return PVector.add(PVector.mult(coor, getGlobalScale()), parent.getGlobalCoords());
+  }
+  
+  final float getGlobalScale() {
+    if (parent == null) {
+      return scale;
+    }
+    return parent.getGlobalScale() * scale;
+  }
+  
+  final PVector globalToRelCoords(PVector glob) {
+    PVector rel_scaled = PVector.sub(glob, getGlobalCoords());
+    return rel_scaled.div(getGlobalScale());
+  }
+  
+  final void transformMatrix() {
+    if (parent != null) {
+      parent.transformMatrix();
+    }
+    scale(scale);
+    translate(coor.x, coor.y);
   }
   
   float getWidth() {
@@ -45,7 +74,7 @@ class Widget {
   void draw() {
   }
 
-  final void drawChildren() {
+  /*final void drawChildren() {
     for (Widget child : children) {
       pushMatrix();
       translate(coor.x, coor.y);
@@ -53,7 +82,7 @@ class Widget {
       child.drawChildren();
       popMatrix();
     }
-  }
+  }*/
   
   void updateChildren() {
     for (int i = 0; i < children.size(); i++) {
@@ -119,18 +148,21 @@ class Label extends Widget {
   }
 
   @Override
-    void draw() {
+  void draw() {
+    pushMatrix();
+    transformMatrix();
     pushStyle();
     textAlign(textAlignment);
     textSize(textSize);
     if(!noBackground) {
       fill(background);
       rectMode(CORNER);
-      rect(coor.x, coor.y, getWidth(), getHeight());
+      rect(0, 0, getWidth(), getHeight());
     }
     fill(fill);
-    text(text, coor.x + padding, coor.y + padding + textAscent());
+    text(text, padding, padding + textAscent());
     popStyle();
+    popMatrix();
   }
 }
 
@@ -210,26 +242,30 @@ class RectButton extends Button {
   }
 
   @Override
-    boolean mouseHover() {
+  boolean mouseHover() {
     PVector globalCoors = getGlobalCoords();
+    float globalScale = getGlobalScale();
     return 
       mouseX > globalCoors.x && 
-      mouseX < globalCoors.x + sizeX && 
+      mouseX < globalCoors.x + sizeX * globalScale && 
       mouseY > globalCoors.y && 
-      mouseY < globalCoors.y + sizeY;
+      mouseY < globalCoors.y + sizeY * globalScale;
   }
 
   @Override
-    void draw() {
+  void draw() {
     pushStyle();
+    pushMatrix();
+    transformMatrix();
     rectMode ( CORNER );
     if (isPressed()) {
       fill(pressedColor);
     } else {
       fill(releasedColor);
     }
-    rect ( coor.x, coor.y, sizeX, sizeY );
+    rect ( 0, 0, sizeX, sizeY );
     popStyle();
+    popMatrix();
   }
   
   @Override
@@ -255,17 +291,22 @@ class CircButton extends Button {
   @Override
   boolean mouseHover() {
     PVector globalCoords = getGlobalCoords();
-    return dist ( globalCoords.x, globalCoords.y, mouseX, mouseY ) < sizeX/2;
+    return dist ( globalCoords.x, globalCoords.y, mouseX, mouseY ) < sizeX * getGlobalScale()/2;
   }
 
   @Override
   void draw() {
+    pushStyle();
+    pushMatrix();
+    transformMatrix();
     if (isPressed()) {
       fill(pressedColor);
     } else {
       fill(releasedColor);
     }
-    ellipse ( coor.x, coor.y, sizeX, sizeX );
+    ellipse ( 0, 0, sizeX, sizeX );
+    popMatrix();
+    popStyle();
   }
   
   @Override
@@ -280,7 +321,7 @@ class CircButton extends Button {
 }
 
 
-class CustomButton extends Button {
+/*class CustomButton extends Button {
   ArrayList<Button> parts;
   CustomButton ( Widget parent, String name, float x, float y, ArrayList p ) {
     super ( parent, name, x, y, 0 );
@@ -307,4 +348,4 @@ class CustomButton extends Button {
       popStyle();
     }
   }
-}
+}*/

@@ -149,7 +149,8 @@ class Field extends Widget {
   }
 
   HexCoor getTargetHex() {
-    return coorsToHex(mouseX - getGlobalCoords().x, mouseY - getGlobalCoords().y);
+    PVector relCoords = globalToRelCoords(new PVector(mouseX, mouseY));
+    return coorsToHex(relCoords.x, relCoords.y);
   }
 
   // just transforming regular coor-s into hex coor-s
@@ -274,11 +275,17 @@ class Field extends Widget {
       ppv = pv;
     }
   }
+  
+  void addEntity(Entity e, HexCoor to) {
+    e.init(to);
+    hexes[to.x][to.y].entities.add(e);
+    addChild(e);
+  }
 
   /// drawing the field ///
   void draw() {
     pushMatrix();
-    translate(coor.x, coor.y);
+    transformMatrix();
     for ( int i = 0; i < w; i++ ) {
       for ( int j = 0; j < h; j++ ) {
         //println ( "Hex[" + i + "][" + j + "] with space " + hexes[i][j].space );
