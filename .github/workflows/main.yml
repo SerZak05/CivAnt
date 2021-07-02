@@ -34,5 +34,5 @@ jobs:
         run: |
           pwd
           ls
-          processing-3.5.4/processing-java --sketch=. --export
+          processing-3.5.4/processing-java --sketch=`pwd` --export
           echo test, and deploy your project.
