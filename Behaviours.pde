@@ -142,14 +142,14 @@ class Movable extends Behaviour implements MouseListener {
     entities.remove ( this );
   }*/
 
-  void updateVisibility() {
+  /*void updateVisibility() {
     field.hexes[mEntity.x][mEntity.y].isOpened = true;
     for ( HexCoor neigh : field.getNeigh( mEntity.x, mEntity.y ) ) {
       if ( !field.isHexInside(new HexCoor(neigh.x, neigh.y)) ) continue;
       field.hexes[(int)neigh.x][(int)neigh.y].isOpened = true;
       field.hexes[(int)neigh.x][(int)neigh.y].space = field.hexes[(int)neigh.x][(int)neigh.y].capacity;
     }
-  }
+  }*/
   
   @Override
   void nextTurn() {
@@ -224,6 +224,16 @@ class Builder extends Behaviour {
 
   @Override
   void init() {}
+  
+  private void updateMenu() {
+    if (currProject != null) {
+      currBuilding.text = "Building: " + currProject.name + "\nTurns left: " + (totalTurns - currTurn);
+      projectLabel.text = "Change project:";
+    } else {
+      currBuilding.text = "No project";
+      projectLabel.text = "Select next project:";
+    }
+  }
 
   @Override
   void nextTurn() {
@@ -233,13 +243,7 @@ class Builder extends Behaviour {
         build();
       }
     }
-    if (currProject != null) {
-      currBuilding.text = "Building: " + currProject.name + "\nTurns left: " + (totalTurns - currTurn);
-      projectLabel.text = "Change project:";
-    } else {
-      currBuilding.text = "No project";
-      projectLabel.text = "Select next project:";
-    }
+    updateMenu();
   }
   
   @Override
@@ -263,6 +267,9 @@ class Builder extends Behaviour {
     println("Selected a project: " + project);
     currProject = new Entity(unitsConfig, project);
     totalTurns = currProject.turnsToMake;
+    currTurn = 0;
     food -= currProject.foodToMake;
+    
+    updateMenu();
   }
 }
