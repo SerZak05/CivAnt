@@ -7,13 +7,12 @@ ModeType mode;
 final int PLAYER_NUM = 0;
 
 Camera camera;
+Selector selector;
 
 Widget currScene = null;
 
 final float HEX_SIDE_SIZE = 50;
 Field field;
-
-Entity selectedEntity = null;
 
 JSONObject unitsConfig;
 
@@ -22,8 +21,9 @@ float food = 100, income = 0; // overall food supply
 void setup() {
   fullScreen();
   textSize(40);
-
+  
   camera = new Camera();
+  selector = new Selector();
 
   //shapeMode(CENTER);
   rectMode(CORNERS);
@@ -43,12 +43,9 @@ void nextTurn() {
   //gatherer.nextTurn();
 }
 
-void mouseDragged() {
-  camera.mouseDragged();
-}
-
 void keyPressed () {
   camera.keyPressed();
+  selector.keyPressed();
   // next turn
   if ( mode == ModeType.game ) {
     switch ( key ) {
@@ -61,10 +58,28 @@ void keyPressed () {
 
 void keyReleased() {
   camera.keyReleased();
+  selector.keyReleased();
 }
 
 void mouseWheel(MouseEvent me) {
   camera.mouseWheel(me.getCount());
+}
+
+MouseLoop mouseLoop = new MouseLoop();
+void mouseClicked() {
+  mouseLoop.processMouseEvent(MouseEventType.CLICKED);
+}
+
+void mousePressed() {
+  mouseLoop.processMouseEvent(MouseEventType.PRESSED);
+}
+
+void mouseDragged() {
+  mouseLoop.processMouseEvent(MouseEventType.DRAGGED);
+}
+
+void mouseReleased() {
+  mouseLoop.processMouseEvent(MouseEventType.RELEASED);
 }
 
 Drawer drawer = new Drawer();
@@ -77,6 +92,7 @@ void draw() {
   switch ( mode ) {
   case game :
     camera.update();
+    selector.updateInfo();
     updateIncome();
 
 

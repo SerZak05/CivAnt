@@ -32,8 +32,8 @@ abstract class Behaviour {
 }
 
 
-class Movable extends Behaviour {
-  int speed, MP, size; //MP (move points) - current state
+class Movable extends Behaviour implements MouseListener {
+  int speed, MP; //MP (move points) - current state
   boolean isActive = true;
   color fill;
   
@@ -43,11 +43,9 @@ class Movable extends Behaviour {
     super(e);
     speed = config.getInt("speed");
     MP = speed;
-    size = config.getInt("size");
     name = config.getString("type");
     
     // Config of widgets
-    setZ(-1); // UI level (in front of the field
     infoWidget = new Widget(null);
     speedLabel = new Label(infoWidget, new PVector(0, 0));
     speedLabel.textAlignment = LEFT;
@@ -56,17 +54,13 @@ class Movable extends Behaviour {
     speedLabel.background = color(200, 170, 0);
     speedLabel.text = "Move points: " + MP + "/" + speed;
     infoWidget.pack(speedLabel);
-    Label sizeLabel = new Label(infoWidget, new PVector(0, speedLabel.getHeight()));
-    sizeLabel.textAlignment = LEFT;
-    sizeLabel.textSize = 30;
-    sizeLabel.fill = 255;
-    sizeLabel.background = color(200, 170, 0);
-    sizeLabel.text = "Size: " + size;
-    infoWidget.pack(sizeLabel);
     
-    menuWidget = null;
-    
-    setZ(0);
+    menuWidget = null;    
+  }
+  
+  @Override
+  Float getZ() {
+    return 0.5;
   }
   
   // Used, when placing entity on the field.
@@ -74,45 +68,49 @@ class Movable extends Behaviour {
   @Override
   void init() {
     // field.updateSpace();
-    field.hexes[mEntity.x][mEntity.y].space = field.hexes[mEntity.x][mEntity.y].capacity - size;
+    // field.hexes[mEntity.x][mEntity.y].space = field.hexes[mEntity.x][mEntity.y].capacity - size;
+    mouseLoop.addListener(this);
     // updateVisibility();
   } 
 
-  private boolean pmousePressed = false;
   @Override
   void update() {
     speedLabel.text = "Move points: " + MP + "/" + speed;
     if ( MP <= 0 ) {
       isActive = false;
     }
-    if ( mEntity == selectedEntity && pmousePressed && !mousePressed ) { // mouse released
+  }
+  
+  @Override
+  boolean processMouseEvent(MouseEventType t) {
+    if ( selector.isSingleSelected(mEntity) ) {
       if ( mouseButton == RIGHT ) {
+        // Blocking clicked, because blocking released
+        if ( t == MouseEventType.CLICKED ) return false;
+        if ( t != MouseEventType.RELEASED ) return true;
         HexCoor target = field.getTargetHex();
         if ( target != null ) {
-          field.hexes[mEntity.x][mEntity.y].space += size;
           move ( target.x, target.y );
-          field.hexes[mEntity.x][mEntity.y].space -= size;
         }
+      } else {
+        return true;
       }
     }
-    pmousePressed = mousePressed;
+    return true;
   }
 
   void move( int tx, int ty ) {
-    int x = mEntity.x, y = mEntity.y;
-    ArrayList<HexCoor> path = field.path( x, y, tx, ty, size );
+    ArrayList<HexCoor> path = field.path( mEntity.x, mEntity.y, tx, ty, mEntity.size );
     if ( path == null ) return;
     if ( path.size() > MP ) return;
+
     MP -= path.size();
-    field.hexes[x][y].entities.remove( this );
-    //field.hexes[x][y].space += size;
-    PVector diff = PVector.sub(field.hexes[tx][ty].center, field.hexes[x][y].center);
+    field.hexes[mEntity.x][mEntity.y].removeEntity(mEntity);
+    PVector diff = PVector.sub(field.hexes[tx][ty].center, field.hexes[mEntity.x][mEntity.y].center);
     mEntity.x = tx;
     mEntity.y = ty;
     mEntity.coor.add(diff);
-    // updateVisibility();
-    //field.hexes[x][y].space = field.hexes[x][y].capacity - size;
-
+    field.hexes[mEntity.x][mEntity.y].addEntity(mEntity);
     //joining squad//
     /*for ( int i = 0; i < field.hexes[x][y].entities.size(); i++ ) {
       Entity en = field.hexes[x][y].entities.get(i);
@@ -131,7 +129,6 @@ class Movable extends Behaviour {
         joinSquad( sq );
       }
     }*/
-    field.hexes[x][y].entities.add( mEntity );
   }
 
   /*void joinSquad( Squad s ) {
@@ -179,7 +176,6 @@ class Builder extends Behaviour {
     name = "Builder";
     
     // menu and info panels
-    setZ(-1); // UI level (in front of the field)
     menuWidget = new Widget(null);
     projectLabel = new Label(menuWidget);
     projectLabel.background = color(200, 170, 0);
@@ -208,6 +204,7 @@ class Builder extends Behaviour {
       b.callback = new Callback() {
         @Override
         void callback() {
+          println("Callback");
           self.selectProject(b.label.text);
         }
       };
@@ -223,13 +220,11 @@ class Builder extends Behaviour {
     menuWidget.pack(currBuilding);
     
     infoWidget = null;
-    
-    setZ(0);
   }
+
   @Override
-  void init() {
-    
-  }
+  void init() {}
+
   @Override
   void nextTurn() {
     if (currProject != null) { // if building
@@ -269,6 +264,5 @@ class Builder extends Behaviour {
     currProject = new Entity(unitsConfig, project);
     totalTurns = currProject.turnsToMake;
     food -= currProject.foodToMake;
-    mEntity.deselect();
   }
 }

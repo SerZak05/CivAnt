@@ -1,4 +1,4 @@
-final class Camera {
+final class Camera implements MouseListener {
   private boolean movingUp = false;
   private boolean movingLeft = false;
   private boolean movingRight = false;
@@ -7,6 +7,14 @@ final class Camera {
   private boolean scalingOut = false;
   private float cameraSpeed = 15;
   private float scalingSpeed = 1.05;
+  
+  Camera() {
+    println("Adding camera");
+    mouseLoop.addListener(this);
+  }
+  
+  @Override
+  Float getZ() {return 5.0;}
 
   void keyPressed() {
     switch(key) {
@@ -60,12 +68,15 @@ final class Camera {
     }
   }
 
-  void mouseDragged() {
+  @Override
+  boolean processMouseEvent(MouseEventType t) {
+    if ( t != MouseEventType.DRAGGED ) return true;
     if ( mode == ModeType.game ) {
       if ( mouseButton == LEFT ) {
         field.coor.add( (mouseX - pmouseX) / field.getGlobalScale(), (mouseY - pmouseY) / field.getGlobalScale() );
       }
     }
+    return true;
   }
   
   void mouseWheel(float cnt) {

@@ -4,11 +4,13 @@ void changeScene(ModeType newMode) {
   
   // Removing from drawer
   drawer.removeWidget(currScene);
+  mouseLoop.removeAllTree(currScene);
   
   // Creating new scene
   Widget res = new Widget(null);
   switch (newMode) {
   case menu: // Main menu scene
+    println("Changing scene to menu");
     res = new Widget(null, new PVector(width / 2, height / 4));
     {
       Label l = new Label(res);
@@ -25,7 +27,8 @@ void changeScene(ModeType newMode) {
         textWidth("Play"), textAscent()+textDescent() );
       b.callback = new Callback() {
         @Override
-          public void callback() {
+        public void callback() {
+          println("Callback to game");
           changeScene(ModeType.game);
         }
       };
@@ -37,7 +40,7 @@ void changeScene(ModeType newMode) {
         textWidth("Help"), textAscent()+textDescent() );
       b.callback = new Callback() {
         @Override
-          public void callback() {
+        public void callback() {
           changeScene(ModeType.help);
         }
       };
@@ -49,7 +52,7 @@ void changeScene(ModeType newMode) {
         textWidth("Quit"), textAscent()+textDescent() );
       b.callback = new Callback() {
         @Override
-          public void callback() {
+        public void callback() {
           exit();
         }
       };
@@ -60,10 +63,11 @@ void changeScene(ModeType newMode) {
     break;
 
   case game: // Main game scene
+    println("Changing scene to game");
     CircButton backToMenuButton = new CircButton(res, "Back to menu", 15, 15, 100);
     backToMenuButton.callback = new Callback() {
       @Override
-        public void callback() {
+      public void callback() {
         changeScene(ModeType.menu);
       }
     };

@@ -28,7 +28,7 @@ class Drawer {
   }
   
   void addWidget(Widget w) {
-    println("Adding widget to drawer: " + w);
+    // println("Adding widget to drawer: " + w);
     if ( !allWidgets.containsKey(w.z) ) allWidgets.put(w.z, new ArrayList<Widget>());
     // Adding object
     allWidgets.get(w.z).add(w);
@@ -39,9 +39,9 @@ class Drawer {
   }
   
   void removeWidget(Widget w) {
-    println("Removing widget from drawer: " + w);
+    // println("Removing widget from drawer: " + w);
     if ( w == null ) {
-      println("Removing null from the Drawer!");
+      // println("Removing null from the Drawer!");
       return;
     }
     if ( !allWidgets.containsKey(w.z) ) {

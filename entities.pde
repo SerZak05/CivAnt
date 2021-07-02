@@ -1,20 +1,18 @@
 class Entity extends Widget {
   //boolean canBeSelected;
   private int turnsToMake, foodToMake, foodUsing;
+  private int size; // Size on the hex
   private int player = 0; // player number
   
   ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
 
-  private Button icon;
-  
-  private Widget menu, info;
+  // private Button icon;
   
   private boolean hasInit = false;
 
   String name;
   int x, y; // current position on the field
   // private boolean isSelected = false;
-  private Button closeMenuButton;
   
   private PImage mImage;
 
@@ -29,6 +27,7 @@ class Entity extends Widget {
     turnsToMake = config.getInt("turnsToMake", 0);
     foodToMake = config.getInt("foodToCost", 0);
     foodUsing = config.getInt("foodConsumption", 0);
+    size = config.getInt("size", 0);
     println("Turns to make: " + turnsToMake);
     println("Food to make: " + foodToMake);
     println("Food using: " + foodUsing);
@@ -59,7 +58,8 @@ class Entity extends Widget {
     mImage.resize(round(HEX_SIDE_SIZE), newHeight);
     
     // Configuring icon
-    final Entity self = this;
+    // Removed because Selector now handles selection
+    /* final Entity self = this;
     icon = new RectButton ( this, name, 
       HEX_SIDE_SIZE/2, 
       - 3*HEX_SIDE_SIZE/4,
@@ -72,18 +72,15 @@ class Entity extends Widget {
       }
     };
     icon.label.padding = 0;
-    addChild(icon);
+    addChild(icon);*/
     
     // Setting up z coords (for drawing)
     z = new Float(defaultEntityZ);
-    icon.z = new Float(z - 0.5);
-    icon.label.z = new Float(z - 0.5);
+    // icon.z = new Float(z - 0.5);
+    // icon.label.z = new Float(z - 0.5);
     
     // Configuring menu and info widgets
-    info = new Widget(null, new PVector(0, 300));
-    menu = new Widget(null, new PVector(width - 300, 0));
-    
-    updateMenuInfo();
+    // Now in Selector
   }
   
   // init is used when the entity is placed on the field.
@@ -109,119 +106,19 @@ class Entity extends Widget {
       .build();
     return clone;
   }*/
-  // updates menu and info widgets with all behaviours' widgets
-  void updateMenuInfo() {
-    final Entity self = this;
-
-    menu.children.clear();
-    info.children.clear();
-    Label infoNameLabel = new Label(info);
-    infoNameLabel.text = name;
-    infoNameLabel.fill = 0;
-    infoNameLabel.background = color(200, 170, 0);
-    infoNameLabel.textSize = 40;
-    info.pack(infoNameLabel);
-    Label menuNameLabel = new Label(menu);
-    menuNameLabel.text = name;
-    menuNameLabel.fill = 0;
-    menuNameLabel.background = color(200, 170, 0);
-    menuNameLabel.textSize = 50;
-    menu.pack(menuNameLabel);
-    
-    Label behavioursList = new Label(menu);
-    for ( Behaviour b : behaviours ) {
-      behavioursList.text += b.getName() + ' ';
-    }
-    behavioursList.fill = 0;
-    behavioursList.background = color(200, 170, 0);
-    behavioursList.textSize = 30;
-    menu.pack(behavioursList);
-    
-    for ( Behaviour b : behaviours ) {
-      Widget mWidget = b.getMenuWidget();
-      if (mWidget != null) {
-        mWidget.parent = menu;
-        menu.pack(b.getMenuWidget());
-      }
-      Widget iWidget = b.getInfoWidget();
-      if (iWidget != null) {
-        iWidget.parent = info;
-        info.pack(b.getInfoWidget());
-      }
-    }
-    closeMenuButton = new RectButton(menu, "X", 
-      200, 0, 100, menuNameLabel.getHeight());
-    closeMenuButton.callback = new Callback() {
-      @Override
-      public void callback() {
-        self.deselect();
-      }
-    };
-    menu.addChild(closeMenuButton);
-  }
   
   void update() {
     if (!hasInit) return;
     for ( int i = 0; i < behaviours.size(); i++ ) {
       behaviours.get(i).update();
     }
-    
-    if ( this == selectedEntity ) {
-      displayMenu();
-    } else {
-      hideMenu();
-    }
-    if ( field.getTargetHex() != null && field.getTargetHex().x == x && field.getTargetHex().y == y ) {
-      displayInfo();
-    } else {
-      hideInfo();
-    }
-  }
-  
-  void select() {
-    selectedEntity = this;
-  }
-  
-  void deselect() {
-    selectedEntity = null;
   }
 
   void nextTurn() {
     if(!hasInit) return;
-    deselect();
     food -= foodUsing;
     for ( Behaviour b : behaviours ) {
       b.nextTurn();
-    }
-  }
-  private boolean isShowingInfo = false;
-  private boolean isShowingMenu = false;
-  private void displayInfo() {
-    if(!isShowingInfo) {
-      isShowingInfo = true;
-      currScene.addChild(info);
-      drawer.addWidget(info);
-    }
-  }
-  private void hideInfo() {
-    if(isShowingInfo) {
-      isShowingInfo = false;
-      currScene.removeChild(info);
-      drawer.removeWidget(info);
-    }
-  }
-  private void displayMenu() {
-    if(!isShowingMenu) {
-      isShowingMenu = true;
-      currScene.addChild(menu);
-      drawer.addWidget(menu);
-    }
-  }
-  private void hideMenu() {
-    if(isShowingMenu) {
-      isShowingMenu = false;
-      currScene.removeChild(menu);
-      drawer.removeWidget(menu);
     }
   }
 

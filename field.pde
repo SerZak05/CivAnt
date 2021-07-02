@@ -1,10 +1,12 @@
+import java.util.HashSet;
+
 class Hex {
   boolean isVisible = false, isOpened = true;
   int capacity; // over all capacity
-  int space; // current capacity
+  private int space; // current capacity
   final PVector center;
 
-  ArrayList<Entity> entities = new ArrayList<Entity>(); // entities, who are on that hex
+  private HashSet<Entity> entities = new HashSet<Entity>(); // entities, that are on this hex
   ResourceType resource;
 
   Hex ( PVector coor, int cap ) {
@@ -17,6 +19,18 @@ class Hex {
     center = new PVector ( coor.x, coor.y );
     resource = r;
   }
+  
+  void addEntity(Entity e) {
+    entities.add(e);
+    space -= e.size;
+  }
+  
+  void removeEntity(Entity e) {
+    entities.remove(e);
+    space += e.size;
+  }
+  
+  int getSpace() {return space;}
 
   PShape getShape() {
     PShape shape = createShape();

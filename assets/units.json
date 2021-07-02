@@ -3,11 +3,11 @@
 		"foodCost": 15,
 		"foodConsumption": 1,
 		"turnsToMake": 3,
+		"size": 1,
 		"behaviours": [
 			{
 				"type": "Movable",
 				"speed": 4,
-				"size": 1
 			}
 		],
 		"picture": "assets/ant.png",
@@ -17,6 +17,7 @@
 		"foodCost": 25,
 		"foodConsumption": 2,
 		"turnsToMake": 5,
+		"size": 2,
 		"behaviours": [
 			{
 				"type": "Builder",
@@ -26,8 +27,7 @@
 			},
 			{
 				"type": "Movable",
-				"speed": 3,
-				"size": 2
+				"speed": 3
 			}
 		]
 		
@@ -35,6 +35,8 @@
 	"Builder": {
 		"foodCost": 25,
 		"foodConsumption": 2,
+		"turnsToMake": 4,
+		"size": 2,
 		"behaviours": [
 			{
 				"type": "Builder",
@@ -44,14 +46,14 @@
 			},
 			{
 				"type": "Movable",
-				"speed": 3,
-				"size": 2
+				"speed": 3
 			}
 		]
 	},
 	"Nest": {
 		"foodCost": 0,
 		"foodConsumption": 3,
+		"turnsToMake": 2,
 		"behaviours": [
 			{
 				"type": "Builder",

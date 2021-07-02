@@ -7,7 +7,7 @@ final Float defaultUIZ = new Float(0);
 final Float defaultEntityZ = new Float(1);
 final Float defaultFieldZ = new Float(2);
 
-class Widget {
+class Widget implements MouseListener {
   protected ArrayList<Widget> children = new ArrayList<Widget>();
   protected Widget parent;
   PVector coor;
@@ -23,11 +23,18 @@ class Widget {
     this.coor = new PVector(coor.x, coor.y);
   }
   
+  
   Widget(Widget parent) {
     this.parent = parent;
     z = new Float(defaultZ);
     coor = new PVector();
   }
+  
+  @Override
+  final Float getZ() {return z;}
+
+  @Override
+  boolean processMouseEvent(MouseEventType e) {return true;}
 
   final PVector getGlobalCoords() {
     if (parent == null) { //this Widget is a root
@@ -69,12 +76,12 @@ class Widget {
 
   final void addChild(Widget newChild) {
     if(newChild == null) return;
-    println("Adding child: " + newChild.toString());
+    // println("Adding child: " + newChild.toString());
     children.add(newChild);
   }
 
   final void removeChild(Widget child) {
-    println("Removing child: " + child.toString());
+    // println("Removing child: " + child.toString());
     children.remove(child);
   }
 
@@ -108,7 +115,6 @@ class Widget {
       Widget last = children.get(children.size() - 1);
       newChild.coor = new PVector(last.coor.x, last.coor.y + last.getHeight());
     }
-    println("New coords: " + newChild.coor.toString());
     addChild(newChild);
   }
 }
@@ -188,12 +194,14 @@ class Button extends Widget {
 
   Button ( Widget parent, String name, float x, float y, float sx ) {
     super(parent, new PVector(x, y));
+    mouseLoop.addListener(this);
     sizeX = sx;
     initLabel(name);
   }
   
   Button(Widget parent, String name, float size) {
     super(parent);
+    mouseLoop.addListener(this);
     sizeX = size;
     initLabel(name);
   }
@@ -225,12 +233,25 @@ class Button extends Widget {
   boolean isReleased() {
     return pmousePressed && !isPressed() && !mouseExit();
   }
+  
+  @Override
+  final boolean processMouseEvent(MouseEventType t) {
+    if ( t != MouseEventType.RELEASED && t != MouseEventType.CLICKED ) return true;
+    if ( mouseHover() ) {
+      // Callback only on released, so calling it once (not on click)
+      if ( t == MouseEventType.RELEASED )
+        callback.callback();
+      // Blocking click anyway
+      return false;
+    }
+    return true;
+  }
 
   @Override
-    void update() {
-    if (isReleased() && callback != null) {
+  void update() {
+    /*if (isReleased() && callback != null) {
       callback.callback();
-    }
+    }*/
     pmouseHover = mouseHover();
     pmousePressed = isPressed();
   }
