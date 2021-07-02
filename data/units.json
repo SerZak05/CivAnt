@@ -10,8 +10,8 @@
 				"speed": 4,
 			}
 		],
-		"picture": "assets/ant.png",
-		"mask": "assets/ant_mask.png"
+		"picture": "ant.png",
+		"mask": "ant_mask.png"
 	},
 	"Gatherer": {
 		"foodCost": 25,
@@ -63,7 +63,7 @@
 				]
 			}
 		],
-		"picture": "assets/nest.png",
-		"mask": "assets/nest_mask.png"
+		"picture": "nest.png",
+		"mask": "nest_mask.png"
 	}
 }
