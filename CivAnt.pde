@@ -28,7 +28,7 @@ void setup() {
   //shapeMode(CENTER);
   rectMode(CORNERS);
   textAlign( LEFT, TOP );
-  unitsConfig = loadJSONObject("assets/units.json");
+  unitsConfig = loadJSONObject("units.json");
   changeScene(ModeType.menu);
 }
 
