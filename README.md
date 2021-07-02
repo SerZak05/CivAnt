@@ -3,13 +3,13 @@
 
 ### Installation
 You can access the game 2 different ways:
-- You can build the game code using Processing from https://www.processing.org/download/.
-  1. Install Processing suitable for your OS.
+- You can build the game code using Processing 3 from https://www.processing.org/download/.
+  1. Install Processing 3 suitable for your OS.
   2. Make new folder named *CivAnt_1* and copy all files in this repository into it.
-  3. Open any .pde file using Processing.
+  3. Open any .pde file using Processing (double-click).
   4. Press *Ctrl+R* or *Play* button and enjoy.
 This method allows you to change code, assets and contribute to the project.
-- You can download can download a released build of this game using instructions found in the description.
+- You can download a released build of this game using instructions found in the description of the release.
 
 ### Feedback
 You can report an error/give feedback using *Issues* tab: create an *Issue*, describe your situation in details or desired enhancements, and I will look into it.
