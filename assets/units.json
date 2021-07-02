@@ -58,7 +58,8 @@
 			{
 				"type": "Builder",
 				"builds": [
-					"Recon"
+					"Recon",
+					"Builder"
 				]
 			}
 		],

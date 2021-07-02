@@ -54,8 +54,10 @@ class Entity extends Widget {
     if(mImage != null && mask != null) {
       mImage.mask(mask);
     }
-    int newHeight = round(mImage.height * HEX_SIDE_SIZE / mImage.width);
-    mImage.resize(round(HEX_SIDE_SIZE), newHeight);
+    if(mImage != null) {
+      int newHeight = round(mImage.height * HEX_SIDE_SIZE / mImage.width);
+      mImage.resize(round(HEX_SIDE_SIZE), newHeight);
+    }
     
     // Configuring icon
     // Removed because Selector now handles selection
