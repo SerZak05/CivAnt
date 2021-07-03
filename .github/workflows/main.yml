@@ -32,8 +32,8 @@ jobs:
       - name: build
         run: |
           pwd
-          ls
           uname -a
           ./processing-3.5.4/processing-java
-          ./processing-3.5.4/processing-java --sketch=`pwd` --export
+          ./processing-3.5.4/processing-java --sketch=`pwd` --output=build --export
+                    ls
           echo test, and deploy your project.
