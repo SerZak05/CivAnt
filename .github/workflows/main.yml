@@ -31,9 +31,6 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: build
         run: |
-          pwd
-          uname -a
-          ./processing-3.5.4/processing-java
           ./processing-3.5.4/processing-java --sketch=`pwd` --output=build --export
-                    ls
-          echo test, and deploy your project.
+                    ls build
+
