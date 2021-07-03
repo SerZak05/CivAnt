@@ -22,12 +22,10 @@ jobs:
         run: wget -O- https://github.com/processing/processing/releases/download/processing-0270-3.5.4/processing-3.5.4-linux64.tgz |tar xzgv -
 
       - name: build
-        run: |
-          ./processing-3.5.4/processing-java --sketch=`pwd` --output="CivAnt-release" --platform=${{matrix.release-os}} --export
-          tar czfv CivAnt-release-${{matrix.release-os}}.tgz CivAnt-release
-          ls
+        run:  ./processing-3.5.4/processing-java --sketch=`pwd` --output="CivAnt-release" --platform=${{matrix.release-os}} --export
+
       - name: Save results
         uses: actions/upload-artifact@v2
         with:
           name: ${{matrix.release-os}}-release
-          path: CivAnt-release-${{matrix.release-os}}.tgz
+          path: CivAnt-release
