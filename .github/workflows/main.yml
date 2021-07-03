@@ -31,6 +31,11 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: build
         run: |
-          ./processing-3.5.4/processing-java --sketch=`pwd` --output=build --export
-                    ls build
-
+          ./processing-3.5.4/processing-java --sketch=`pwd` --output="CivAnt-release" --platform=windows --export
+          tar czfv CivAnt-release-windows.tgz CivAnt-release
+          ls
+      - name: Save results
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-release
+          path: CivAnt-release
