@@ -38,4 +38,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: windows-release
-          path: CivAnt-release
+          path:  CivAnt-release-windows.tgz
