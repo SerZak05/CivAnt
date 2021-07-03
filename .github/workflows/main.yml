@@ -1,41 +1,33 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
   pull_request:
     branches: [ master ]
 
-  # Allows you to run this workflow manually from the Actions tab
+  # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        release-os: [linux, windows]
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
       - name: Processing dep
         run: wget -O- https://github.com/processing/processing/releases/download/processing-0270-3.5.4/processing-3.5.4-linux64.tgz |tar xzgv -
 
-      # Runs a set of commands using the runners shell
       - name: build
         run: |
-          ./processing-3.5.4/processing-java --sketch=`pwd` --output="CivAnt-release" --platform=windows --export
-          tar czfv CivAnt-release-windows.tgz CivAnt-release
+          ./processing-3.5.4/processing-java --sketch=`pwd` --output="CivAnt-release" --platform=${{matrix.release-os}} --export
+          tar czfv CivAnt-release-${{matrix.release-os}}.tgz CivAnt-release
           ls
       - name: Save results
         uses: actions/upload-artifact@v2
         with:
-          name: windows-release
-          path:  CivAnt-release-windows.tgz
+          name: ${{matrix.release-os}}-release
+          path: CivAnt-release-${{matrix.release-os}}.tgz
